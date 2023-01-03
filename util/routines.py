@@ -285,7 +285,7 @@ class jump_shot():
         self.shot_vector = shot_vector
         # The point we dodge at
         # 173 is the 93uu ball radius + a bit more to account for the car's hitbox
-        self.dodge_point = self.ball_location - (self.shot_vector * 73)
+        self.dodge_point = self.ball_location - (self.shot_vector * 173)
         # Ratio is how aligned the car is. Low ratios (<0.5) aren't likely to be hit properly
         self.ratio = ratio
         # whether the car should attempt this backwards
@@ -295,7 +295,7 @@ class jump_shot():
         # controls how soon car will jump based on acceleration required. max 584
         # bigger = later, which allows more time to align with shot vector
         #smaller = sooner
-        self.jump_threshold = 284
+        self.jump_threshold = 400
         # Flags for what part of the routine we are in
         self.jumping = False
         self.dodging = False

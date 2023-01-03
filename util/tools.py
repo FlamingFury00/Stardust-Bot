@@ -83,9 +83,6 @@ def find_hits(agent, targets):
                                     if abs((car_to_ball / forward_time) - agent.me.velocity).magnitude() - 300 < 400 * forward_time:
                                         hits[pair].append(aerial_shot(
                                             ball_location, intercept_time, best_shot_vector, slope))
-                                else:
-                                    hits[pair].append(
-                                        short_shot(ball_location))
                             elif backward_flag and ball_location[2] <= 280 and slope > 0.25:
                                 hits[pair].append(
                                     jump_shot(ball_location, intercept_time, best_shot_vector, slope, -1))

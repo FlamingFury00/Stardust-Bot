@@ -14,7 +14,7 @@ class Bot(GoslingAgent):
         d2 = abs(self.ball.location.y - self.foe_goal.location.y)
         is_in_front_of_ball = d2 > d1
 
-        if len(self.stack) != 0:
+        if self.intent is not None:
             return
 
         if self.kickoff_flag:
@@ -41,11 +41,11 @@ class Bot(GoslingAgent):
         shots = find_hits(self, targets)
 
         if len(shots["opponent_goal"]) > 0 and self.me.boost >= 90:
-            self.push(short_shot(self.foe_goal.location))
+            self.set_intent(short_shot(self.foe_goal.location))
             print("attack")
             return
 
-        if self.me.boost <= 10 and len(self.stack) == 0:
+        if self.me.boost <= 10 and self.intent is None:
             for boost in big_boost_pads:
                 distance = (self.me.location - boost.location).magnitude()
                 if closest_boost is None or distance < closest_distance:
@@ -53,7 +53,7 @@ class Bot(GoslingAgent):
                     closest_distance = distance
 
             if closest_boost is not None:
-                self.push(goto(closest_boost.location))
+                self.set_intent(goto(closest_boost.location))
                 print("i'll take boost")
                 return
 
@@ -62,6 +62,6 @@ class Bot(GoslingAgent):
         #     return
 
         if len(shots["not_my_net"]) > 0:
-            self.push(shots["not_my_net"][0])
+            self.set_intent(shots["not_my_net"][0])
             print("defend")
             return
