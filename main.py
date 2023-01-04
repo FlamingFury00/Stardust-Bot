@@ -36,6 +36,18 @@ class BoostManager:
         return closest_boost
 
 
+def defend(self):
+    # Calcola la distanza tra il bot e la porta da difendere
+    distance_to_goal = (self.me.location -
+                        self.friend_goal.location).magnitude()
+    # Se il bot è già vicino alla porta, rimani lì
+    if distance_to_goal < 500:
+        return None
+    # Altrimenti, vai verso la porta
+    else:
+        return goto(self.friend_goal.location)
+
+
 class Bot(GoslingAgent):
     # This function runs every in-game tick (every time the game updates anything)
     def run(self):
@@ -57,13 +69,6 @@ class Bot(GoslingAgent):
         #     self.set_intent(goto(self.friend_goal.location))
         #     return
 
-        if self.me.boost < 50:
-            boost = self.boost_manager.get_boost_if_needed()
-            if boost is not None:
-                print("i'll take boost")
-                self.set_intent(goto(boost.location))
-                return
-
         ball_distance = (self.ball.location - self.me.location).magnitude()
         enemy_distance = (self.foes[0].location - self.me.location).magnitude()
 
@@ -74,7 +79,8 @@ class Bot(GoslingAgent):
                 self.foe_goal.left_post, self.foe_goal.right_post)}
             shots = find_hits(self, targets)
             if len(shots["opponent_goal"]) > 0:
-                self.set_intent(shots["opponent_goal"][0])
+                print("i'll attack")
+                self.set_intent(short_shot(self.foe_goal.location))
                 return
             # Altrimenti, andiamo verso la palla
             self.set_intent(goto(self.ball.location))
@@ -87,5 +93,13 @@ class Bot(GoslingAgent):
             if len(shots["not_my_net"]) > 0:
                 self.set_intent(shots["not_my_net"][0])
                 return
-            # Altrimenti, andiamo verso l'avversario
-            self.set_intent(goto(self.foes[0].location))
+            # Altrimenti, andiamo a difendere la porta
+            print("i'll defend")
+            self.set_intent(defend(self))
+
+        if self.me.boost < 50:
+            boost = self.boost_manager.get_boost_if_needed()
+            if boost is not None:
+                print("i'll take boost")
+                self.set_intent(goto(boost.location))
+                return

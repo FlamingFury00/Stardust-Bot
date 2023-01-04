@@ -208,7 +208,7 @@ class goto():
         angles = defaultPD(agent, local_target, self.direction)
         defaultThrottle(agent, 2300, self.direction)
 
-        agent.controller.boost = False
+        agent.controller.boost = True if distance_remaining > 1000 else False
         agent.controller.handbrake = True if abs(
             angles[1]) > 2.3 else agent.controller.handbrake
 
@@ -295,7 +295,7 @@ class jump_shot():
         # controls how soon car will jump based on acceleration required. max 584
         # bigger = later, which allows more time to align with shot vector
         #smaller = sooner
-        self.jump_threshold = 400
+        self.jump_threshold = 384
         # Flags for what part of the routine we are in
         self.jumping = False
         self.dodging = False
