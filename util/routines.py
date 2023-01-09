@@ -148,12 +148,12 @@ class flip():
         self.yaw = abs(self.vector[1]) * sign(self.vector[1])
         self.cancel = cancel
         # the time the jump began
-        self.time = -1
+        self.time = -0.5
         # keeps track of the frames the jump button has been released
         self.counter = 0
 
     def run(self, agent):
-        if self.time == -1:
+        if self.time == -0.5:
             elapsed = 0
             self.time = agent.time
         else:
@@ -218,7 +218,7 @@ class goto():
         elif abs(angles[1]) < 0.05 and velocity > 600 and velocity < 2150 and distance_remaining / velocity > 2.0:
             agent.set_intent(flip(local_target))
         elif abs(angles[1]) > 2.8 and velocity < 200:
-            agent.set_intent(flip(local_target, True))
+            agent.set_intent(flip(local_target))
         elif agent.me.airborne:
             agent.set_intent(recovery(self.target))
 
@@ -334,7 +334,7 @@ class jump_shot():
 
         # Some adjustment to the final target to ensure it's inside the field and we don't try to dirve through any goalposts to reach it
         if abs(agent.me.location[1]) > 5150:
-            final_target[0] = cap(final_target[0], -750, 750)
+            final_target[0] = cap(final_target[0], -850, 850)
 
         local_final_target = agent.me.local(final_target - agent.me.location)
 
@@ -399,7 +399,7 @@ class kickoff():
         local_target = agent.me.local(target - agent.me.location)
         defaultPD(agent, local_target)
         defaultThrottle(agent, 2300)
-        if local_target.magnitude() < 650:
+        if local_target.magnitude() < 655:
             # flip towards opponent goal
             agent.set_intent(
                 flip(agent.me.local(agent.foe_goal.location - agent.me.location)))
