@@ -74,8 +74,7 @@ class Strategy:
             self.agent.foe_goal.left_post, self.agent.foe_goal.right_post)}
         shots = find_hits(self.agent, targets)
         if len(shots["opponent_goal"]) > 0:
-            self.agent.set_intent(shots["opponent_goal"][0])
-            return
+            return self.agent.set_intent(shots["opponent_goal"][0])
         # Altrimenti, andiamo verso la nostra porta
         self.agent.set_intent(
             goto(self.agent.friend_goal.location))
@@ -89,27 +88,25 @@ class Strategy:
         interception_point = self.agent.me.location + \
             self.agent.me.velocity * (
                 (ball_location - self.agent.me.location).magnitude() /
-                self.agent.ball.velocity.magnitude())
+                ball_velocity.magnitude())
         # Se il punto di intercettazione è entro una certa distanza dalla nostra porta, andiamo in quella direzione
         if (interception_point - self.agent.friend_goal.location).magnitude() < 1000:
-            self.agent.set_intent(goto(interception_point))
-            return
+            return self.agent.set_intent(goto(interception_point))
 
         # Altrimenti, cerca di raccogliere boost se necessario
         boost = self.boost_management.get_boost_if_needed(1000)
         if boost is not None:
-            self.agent.set_intent(goto(boost.location))
-            return
+            return self.agent.set_intent(goto(boost.location))
+
         # Determina se siamo in grado di fare un tiro in porta
         targets = {"my_goal": (
             self.agent.foes[0].location, self.agent.foe_goal.right_post or self.agent.foe_goal.left_post)}
         shots = find_hits(self.agent, targets)
         if len(shots["my_goal"]) > 0:
-            self.agent.set_intent(shots["my_goal"][0])
-            return
+            return self.agent.set_intent(shots["my_goal"][0])
         # Altrimenti, andiamo verso la nostra porta
         self.agent.set_intent(
-            goto(self.agent.ball.location))
+            goto(self.agent.friend_goal.location))
         return
 
     def execute(self):
@@ -139,10 +136,11 @@ class Bot(GoslingAgent):
     def run(self):
         self.strategy = Strategy(self)
 
+        if self.intent is not None:
+            return
+
         if self.kickoff_flag:
             self.set_intent(kickoff())
-
-        if self.intent is not None:
             return
 
         self.strategy.execute()

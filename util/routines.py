@@ -399,7 +399,7 @@ class kickoff():
         local_target = agent.me.local(target - agent.me.location)
         defaultPD(agent, local_target)
         defaultThrottle(agent, 2300)
-        if local_target.magnitude() < 655:
+        if local_target.magnitude() < 650:
             # flip towards opponent goal
             agent.set_intent(
                 flip(agent.me.local(agent.foe_goal.location - agent.me.location)))

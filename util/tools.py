@@ -18,7 +18,7 @@ def find_hits(agent, targets):
 
     # Begin looking at slices 0.25s into the future
     # The number of slices
-    i = 15
+    i = 12
     while i < struct.num_slices:
         # Gather some data about the slice
         intercept_time = struct.slices[i].game_seconds
@@ -32,7 +32,7 @@ def find_hits(agent, targets):
                 break  # abandon search if ball is scored at/after this point
 
             # determine the next slice we will look at, based on ball velocity (slower ball needs fewer slices)
-            i += 15 - cap(int(ball_velocity//150), 0, 13)
+            i += 14 - cap(int(ball_velocity//150), 0, 13)
 
             car_to_ball = ball_location - agent.me.location
             # Get the direction and magnitude of the vectors separately
