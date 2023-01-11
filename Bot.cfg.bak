@@ -6,23 +6,23 @@ looks_config = ./appearance.cfg
 python_file = ./main.py
 
 # Name of the bot in-game
-name = Stardust
+name = SQ Bot
 
 maximum_tick_rate_preference = 120
 
 [Details]
 # These values are optional but useful metadata for helper programs
 # Name of the bot's creator/developer
-developer = FlamingFury00
+developer = "Tero#1644 and GooseFairy#6680"
 
 # Short description of the bot
-description = "Balanced bot"
+description = What an atba looks like with Gosling Utils
 
 # Fun fact about the bot
-fun_fact = "The bot sucks on defense and sometimes gets stuck spinning around the boostpad"
+fun_fact = "I used to work on Riot's LoL stats"
 
 # Link to github repository
-github = https://github.com/FlamingFury00/Sq-Rocket-League-Bot
+github = https://github.com/ddthj/GoslingUtils
 
 # Programming language
 language = Python

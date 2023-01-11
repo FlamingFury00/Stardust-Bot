@@ -42,25 +42,25 @@ custom_color_id = 0
 # Car type (Octane, Merc, etc)
 car_id = 23
 # Type of decal
-decal_id = 7755
+decal_id = 0
 # Wheel selection
-wheels_id = 7812
+wheels_id = 1729
 # Boost selection
-boost_id = 5852
+boost_id = 3114
 # Antenna Selection
 antenna_id = 0
 # Hat Selection
 hat_id = 0
 # Paint Type (for first color)
-paint_finish_id = 7755
+paint_finish_id = 1681
 # Paint Type (for secondary color)
-custom_finish_id = 7755
+custom_finish_id = 1681
 # Engine Audio Selection
 engine_audio_id = 0
 # Car trail Selection
-trails_id = 5960
+trails_id = 0
 # Goal Explosion Selection
-goal_explosion_id = 5975
+goal_explosion_id = 4179
 # Finds the closest primary color swatch based on the provided RGB value like [34, 255, 60]
 primary_color_lookup = None
 # Finds the closest secondary color swatch based on the provided RGB value like [34, 255, 60]

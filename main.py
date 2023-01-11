@@ -94,13 +94,13 @@ class Strategy:
             return self.agent.set_intent(goto(interception_point))
 
         # Altrimenti, cerca di raccogliere boost se necessario
-        boost = self.boost_management.get_boost_if_needed(1000)
+        boost = self.boost_management.get_boost_if_needed(500)
         if boost is not None:
             return self.agent.set_intent(goto(boost.location))
 
-        # Determina se siamo in grado di fare un tiro in porta
+        # Determina se siamo in grado di fare un tiro verso la nostra porta
         targets = {"my_goal": (
-            self.agent.foes[0].location, self.agent.foe_goal.right_post or self.agent.foe_goal.left_post)}
+            self.agent.friend_goal.right_post + Vector3(1000, 0, 1000), self.agent.friend_goal.left_post + Vector3(1000, 0, 1000))}
         shots = find_hits(self.agent, targets)
         if len(shots["my_goal"]) > 0:
             return self.agent.set_intent(shots["my_goal"][0])
@@ -121,13 +121,16 @@ class Strategy:
                                  self.agent.friend_goal.location).magnitude()
                 # Verifica se siamo più vicini alla nostra porta della palla
                 if goal_distance < ball_distance:
-                    # Andiamo verso la nostra porta
-                    self.agent.set_intent(
-                        goto(self.agent.friend_goal.location))
+                    # Intercettiamo la palla
+                    self.intercept()
             else:
-                # Intercettiamo la palla
-                self.intercept()
+                # Attachiamo
+                self.attack()
         else:
+            # Prima, cerca di raccogliere boost se necessario
+            boost = self.boost_management.get_boost_if_needed(500)
+            if boost is not None:
+                return self.agent.set_intent(goto(boost.location))
             # La palla si trova nella metà campo avversaria, quindi andiamo in attacco
             self.attack()
 
