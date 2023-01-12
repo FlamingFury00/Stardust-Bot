@@ -395,6 +395,10 @@ class Vector3:
         return Vector3((self[1] * value[2]) - (self[2] * value[1]), (self[2] * value[0]) - (self[0] * value[2]),
                        (self[0] * value[1]) - (self[1] * value[0]))
 
+    def distance(self, value):
+        # returns the distance between vectors
+        return (value - self).magnitude()
+
     def flatten(self):
         # Sets Z (Vector3[2]) to 0
         return Vector3(self[0], self[1], 0)

@@ -16,20 +16,14 @@ class BoostManagement:
         self.big_boosts = [boost for boost in agent.boosts if boost.large]
 
     def get_boost_if_needed(self, max_distance: float):
-        # Calcola la distanza tra il bot e la palla
-        ball_distance = (self.agent.ball.location -
-                         self.agent.me.location).magnitude()
-        # Calcola la distanza tra il bot e l'avversario più vicino
-        enemy_distance = (
-            self.agent.foes[0].location - self.agent.me.location).magnitude()
-
-        # Se la palla è più vicina a noi dell'avversario e abbiamo bisogno di boost per raggiungere la palla, prendiamo il boost più vicino
-        if ball_distance < enemy_distance and self.agent.me.boost < 50 and ball_distance > 300:
+        ball_location = self.agent.ball.location
+        distance_to_ball = (ball_location - self.agent.me.location).magnitude()
+        # Calcola la distanza tra la palla e ogni avversario
+        enemy_distances = [(ball_location - enemy.location).magnitude()
+                           for enemy in self.agent.foes]
+        # controlla se c'è un avversario più vicino della palla
+        if min(enemy_distances) < distance_to_ball and self.agent.me.boost < 50 and distance_to_ball > 300:
             return self.get_closest_boost(max_distance)
-        # Altrimenti, se l'avversario è troppo lontano da noi e abbiamo bisogno di boost per raggiungere l'avversario, prendiamo il boost più vicino
-        elif enemy_distance > 500 and self.agent.me.boost < 50:
-            return self.get_closest_boost(max_distance)
-        # In tutti gli altri casi, non prendiamo il boost
         else:
             return None
 
@@ -70,11 +64,11 @@ class Strategy:
 
     def attack(self):
         # Determina se siamo in grado di fare un tiro in porta
-        targets = {"opponent_goal": (
-            self.agent.foe_goal.left_post, self.agent.foe_goal.right_post)}
+        targets = {"goal": (self.agent.foe_goal.left_post,
+                            self.agent.foe_goal.right_post)}
         shots = find_hits(self.agent, targets)
-        if len(shots["opponent_goal"]) > 0:
-            return self.agent.set_intent(shots["opponent_goal"][0])
+        if len(shots["goal"]) > 0:
+            return self.agent.set_intent(shots["goal"][0])
         # Altrimenti, andiamo verso la nostra porta
         self.agent.set_intent(
             goto(self.agent.friend_goal.location))
@@ -94,20 +88,28 @@ class Strategy:
             return self.agent.set_intent(goto(interception_point))
 
         # Altrimenti, cerca di raccogliere boost se necessario
-        boost = self.boost_management.get_boost_if_needed(500)
+        boost = self.boost_management.get_boost_if_needed(2000)
         if boost is not None:
             return self.agent.set_intent(goto(boost.location))
 
-        # Determina se siamo in grado di fare un tiro verso la nostra porta
-        targets = {"my_goal": (
-            self.agent.friend_goal.right_post + Vector3(1000, 0, 1000), self.agent.friend_goal.left_post + Vector3(1000, 0, 1000))}
+        # Altrimenti, andiamo verso la nostra porta
+        midleft = Vector3(0, cap(self.agent.ball.location.y -
+                          side(self.agent.team) * 2000, 4000, -4000), 500)
+        midright = Vector3(0, cap(self.agent.ball.location.y -
+                           side(self.agent.team) * 2000, 4000, -4000), 500)
+        upfield_left = Vector3(-side(self.agent.team) * 2500,
+                               self.agent.ball.location.y - side(self.agent.team) * 2000, 500)
+        upfield_right = Vector3(side(self.agent.team) * 2500,
+                                self.agent.ball.location.y - side(self.agent.team) * 2000, 500)
+        targets = {"my_goal": (self.agent.friend_goal.right_post, self.agent.friend_goal.left_post), "left": (
+            upfield_left, midleft), "right": (midright, upfield_right)}
         shots = find_hits(self.agent, targets)
         if len(shots["my_goal"]) > 0:
             return self.agent.set_intent(shots["my_goal"][0])
-        # Altrimenti, andiamo verso la nostra porta
-        self.agent.set_intent(
-            goto(self.agent.friend_goal.location))
-        return
+        elif len(shots["right"]) > 0:
+            return self.agent.set_intent(shots["right"][0])
+        elif len(shots["left"]) > 0:
+            return self.agent.set_intent(shots["left"][0])
 
     def execute(self):
         # Verifica se la palla si trova nella nostra metà campo

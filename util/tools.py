@@ -18,8 +18,7 @@ def find_hits(agent, targets):
 
     # Begin looking at slices 0.25s into the future
     # The number of slices
-    i = 12
-    while i < struct.num_slices:
+    for i in range(struct.num_slices):
         # Gather some data about the slice
         intercept_time = struct.slices[i].game_seconds
         time_remaining = intercept_time - agent.time
@@ -30,9 +29,6 @@ def find_hits(agent, targets):
 
             if abs(ball_location[1]) > 5250:
                 break  # abandon search if ball is scored at/after this point
-
-            # determine the next slice we will look at, based on ball velocity (slower ball needs fewer slices)
-            i += 14 - cap(int(ball_velocity//150), 0, 13)
 
             car_to_ball = ball_location - agent.me.location
             # Get the direction and magnitude of the vectors separately
@@ -70,7 +66,7 @@ def find_hits(agent, targets):
 
                         # Check to make sure our approach is inside the field
                         # in_field(ball_location - (200*best_shot_vector),1):
-                        if True:
+                        if in_field(ball_location - (200*best_shot_vector), 1):
                             # The slope represents how close the car is to the chosen vector, higher = better
                             # A slope of 1.0 would mean the car is 45 degrees off
                             slope = find_slope(
@@ -86,6 +82,4 @@ def find_hits(agent, targets):
                             elif backward_flag and ball_location[2] <= 280 and slope > 0.25:
                                 hits[pair].append(
                                     jump_shot(ball_location, intercept_time, best_shot_vector, slope, -1))
-        else:
-            i += 1
     return hits

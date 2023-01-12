@@ -35,11 +35,11 @@ def defaultPD(agent, local_target, direction=1.0):
     # Once we have the angles we need to rotate, we feed them into PD loops to determing the controller inputs
     agent.controller.steer = steerPD(target_angles[1], 0) * direction
     agent.controller.pitch = steerPD(
-        target_angles[0], agent.me.angular_velocity[1]/4)
+        target_angles[0], agent.me.angular_velocity[1]/6)
     agent.controller.yaw = steerPD(
-        target_angles[1], -agent.me.angular_velocity[2]/4)
+        target_angles[1], -agent.me.angular_velocity[2]/8)
     agent.controller.roll = steerPD(
-        target_angles[2], agent.me.angular_velocity[0]/2)
+        target_angles[2], agent.me.angular_velocity[0]/3)
     # Returns the angles, which can be useful for other purposes
     return target_angles
 
