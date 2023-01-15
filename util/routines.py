@@ -35,7 +35,7 @@ class aerial_shot():
         # The point we hit the ball at
         self.intercept = self.ball_location - (self.shot_vector * 110)
         # dictates when (how late) we jump, much later than in jump_shot because we can take advantage of a double jump
-        self.jump_threshold = 600
+        self.jump_threshold = 400
         # what time we began our jump at
         self.jump_time = 0
         # If we need a second jump we have to let go of the jump button for 3 frames, this counts how many frames we have let go for
@@ -287,7 +287,7 @@ class jump_shot():
         # 173 is the 93uu ball radius + a bit more to account for the car's hitbox
         self.dodge_point = self.ball_location - (self.shot_vector * 173)
         # Ratio is how aligned the car is. Low ratios (<0.5) aren't likely to be hit properly
-        self.ratio = ratio
+        self.ratio = 1
         # whether the car should attempt this backwards
         self.direction = direction
         # Intercept speed not implemented
@@ -295,7 +295,7 @@ class jump_shot():
         # controls how soon car will jump based on acceleration required. max 584
         # bigger = later, which allows more time to align with shot vector
         #smaller = sooner
-        self.jump_threshold = 384
+        self.jump_threshold = 300
         # Flags for what part of the routine we are in
         self.jumping = False
         self.dodging = False

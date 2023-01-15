@@ -71,8 +71,7 @@ class Strategy:
             return self.agent.set_intent(shots["goal"][0])
         # Altrimenti, andiamo verso la nostra porta
         self.agent.set_intent(
-            goto(self.agent.friend_goal.location))
-        return
+            goto(self.agent.friend_goal.location + Vector3(side(self.agent.team) * 100, 0, 0) - Vector3(0, side(self.agent.team) * 500, 0)))
 
     def intercept(self):
         # Calcola il punto di intercettazione tra la palla e la porta
@@ -92,7 +91,7 @@ class Strategy:
         if boost is not None:
             return self.agent.set_intent(goto(boost.location))
 
-        # Altrimenti, andiamo verso la nostra porta
+        # Altrimenti, portiamo la palla verso la nostra porta
         midleft = Vector3(0, cap(self.agent.ball.location.y -
                           side(self.agent.team) * 2000, 4000, -4000), 500)
         midright = Vector3(0, cap(self.agent.ball.location.y -
@@ -130,7 +129,7 @@ class Strategy:
                 self.attack()
         else:
             # Prima, cerca di raccogliere boost se necessario
-            boost = self.boost_management.get_boost_if_needed(500)
+            boost = self.boost_management.get_boost_if_needed(2000)
             if boost is not None:
                 return self.agent.set_intent(goto(boost.location))
             # La palla si trova nella metà campo avversaria, quindi andiamo in attacco

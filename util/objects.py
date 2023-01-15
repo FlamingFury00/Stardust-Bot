@@ -210,7 +210,7 @@ class goal_object:
     # This is a simple object that creates/holds goalpost locations for a given team (for soccer on standard maps only)
     def __init__(self, team):
         team = 1 if team == 1 else -1
-        self.location = Vector3(0, team * 4800, 320)  # center of goal line
+        self.location = Vector3(0, team * 5100, 320)  # center of goal line
         # Posts are closer to x=750, but this allows the bot to be a little more accurate
         self.left_post = Vector3(team * 850, team * 5100, 320)
         self.right_post = Vector3(-team * 850, team * 5100, 320)
