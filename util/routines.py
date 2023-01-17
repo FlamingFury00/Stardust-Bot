@@ -291,7 +291,7 @@ class jump_shot():
         # whether the car should attempt this backwards
         self.direction = direction
         # Intercept speed not implemented
-        self.speed_desired = speed
+        self.speed_desired = 2300
         # controls how soon car will jump based on acceleration required. max 584
         # bigger = later, which allows more time to align with shot vector
         #smaller = sooner
