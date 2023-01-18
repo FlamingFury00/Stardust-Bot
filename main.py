@@ -22,7 +22,7 @@ class BoostManagement:
         enemy_distances = [(ball_location - enemy.location).magnitude()
                            for enemy in self.agent.foes]
         # controlla se c'è un avversario più vicino della palla
-        if min(enemy_distances) < distance_to_ball and self.agent.me.boost < 50 and distance_to_ball > 300:
+        if min(enemy_distances) < distance_to_ball and self.agent.me.boost < 50 and distance_to_ball > 1000:
             return self.get_closest_boost(max_distance)
         else:
             return None
@@ -95,7 +95,7 @@ class Strategy:
 
     def execute(self):
         # Verifica se la palla si trova nella nostra metà campo
-        if self.agent.ball.location.x < 0:
+        if self.agent.ball.location.x < side(self.agent.team):
             # Verifica se siamo abbastanza vicini alla palla per intercettarla
             ball_distance = (self.agent.ball.location -
                              self.agent.me.location).magnitude()
