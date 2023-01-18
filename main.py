@@ -74,23 +74,6 @@ class Strategy:
             goto(self.agent.friend_goal.location + Vector3(side(self.agent.team) * 100, 0, 0) - Vector3(0, side(self.agent.team) * 500, 0)))
 
     def intercept(self):
-        # Calcola il punto di intercettazione tra la palla e la porta
-        ball_prediction = self.agent.get_ball_prediction_struct()
-        ball_location = Vector3(ball_prediction.slices[0].physics.location)
-        ball_velocity = Vector3(ball_prediction.slices[0].physics.velocity)
-        interception_point = self.agent.me.location + \
-            self.agent.me.velocity * (
-                (ball_location - self.agent.me.location).magnitude() /
-                ball_velocity.magnitude())
-        # Se il punto di intercettazione è entro una certa distanza dalla nostra porta, andiamo in quella direzione
-        if (interception_point - self.agent.friend_goal.location).magnitude() < 1000:
-            return self.agent.set_intent(goto(interception_point))
-
-        # Altrimenti, cerca di raccogliere boost se necessario
-        boost = self.boost_management.get_boost_if_needed(2000)
-        if boost is not None:
-            return self.agent.set_intent(goto(boost.location))
-
         # Altrimenti, portiamo la palla verso la nostra porta
         midleft = Vector3(0, cap(self.agent.ball.location.y -
                           side(self.agent.team) * 2000, 4000, -4000), 500)
@@ -124,6 +107,9 @@ class Strategy:
                 if goal_distance < ball_distance:
                     # Intercettiamo la palla
                     self.intercept()
+                else:
+                    return self.agent.set_intent(short_shot(
+                        self.agent.foe_goal.location))
             else:
                 # Attachiamo
                 self.attack()
