@@ -68,6 +68,7 @@ class Strategy:
                             self.agent.foe_goal.right_post)}
         shots = find_hits(self.agent, targets)
         if len(shots["goal"]) > 0:
+            print("i'll attack")
             return self.agent.set_intent(shots["goal"][0])
         # Altrimenti, andiamo verso la nostra porta
         self.agent.set_intent(
@@ -94,8 +95,9 @@ class Strategy:
             return self.agent.set_intent(shots["left"][0])
 
     def execute(self):
+        print(self.agent.ball.location.y * side(self.agent.team))
         # Verifica se la palla si trova nella nostra metà campo
-        if self.agent.ball.location.x < side(self.agent.team):
+        if self.agent.ball.location.y * side(self.agent.team) > 0:
             # Verifica se siamo abbastanza vicini alla palla per intercettarla
             ball_distance = (self.agent.ball.location -
                              self.agent.me.location).magnitude()
