@@ -70,6 +70,9 @@ class Strategy:
         if len(shots["goal"]) > 0:
             print("i'll attack")
             return self.agent.set_intent(shots["goal"][0])
+        elif self.agent.me.boost >= 50:
+            self.agent.set_intent(short_shot(
+                self.agent.foe_goal.location))
         # Altrimenti, andiamo verso la nostra porta
         self.agent.set_intent(
             goto(self.agent.friend_goal.location + Vector3(side(self.agent.team) * 100, 0, 0) - Vector3(0, side(self.agent.team) * 500, 0)))

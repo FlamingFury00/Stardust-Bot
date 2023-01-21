@@ -208,7 +208,8 @@ class goto():
         angles = defaultPD(agent, local_target, self.direction)
         defaultThrottle(agent, 2300, self.direction)
 
-        agent.controller.boost = True if distance_remaining > 1000 else agent.controller.boost
+        agent.controller.boost = False if agent.me.airborne or abs(
+            angles[1]) > 0.3 else agent.controller.boost
         agent.controller.handbrake = True if abs(
             angles[1]) > 2.3 else agent.controller.handbrake
 
