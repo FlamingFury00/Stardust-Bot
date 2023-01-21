@@ -73,9 +73,12 @@ class Strategy:
         elif self.agent.me.boost >= 50:
             self.agent.set_intent(short_shot(
                 self.agent.foe_goal.location))
-        # Altrimenti, andiamo verso la nostra porta
-        self.agent.set_intent(
-            goto(self.agent.friend_goal.location + Vector3(side(self.agent.team) * 100, 0, 0) - Vector3(0, side(self.agent.team) * 500, 0)))
+        elif (self.agent.me.location - self.agent.friend_goal.location).magnitude() < 200:
+            self.intercept()
+        else:
+            # Altrimenti, andiamo verso la nostra porta
+            self.agent.set_intent(
+                goto(self.agent.friend_goal.location, self.agent.ball.location, 1 or -1))
 
     def intercept(self):
         # Altrimenti, portiamo la palla verso la nostra porta
@@ -112,9 +115,6 @@ class Strategy:
                 if goal_distance < ball_distance:
                     # Intercettiamo la palla
                     self.intercept()
-                else:
-                    return self.agent.set_intent(short_shot(
-                        self.agent.foe_goal.location))
             else:
                 # Attachiamo
                 self.attack()
