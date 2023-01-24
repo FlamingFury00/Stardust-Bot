@@ -73,7 +73,7 @@ class Strategy:
         else:
             # Altrimenti, andiamo verso la nostra porta
             self.agent.set_intent(
-                goto(self.agent.friend_goal.location, self.agent.ball.location, 1 or -1))
+                goto(self.agent.friend_goal.location - Vector3(0, side(self.agent.team) * 200, 0), self.agent.ball.location, 1 or -1))
 
     def intercept(self):
         # Altrimenti, portiamo la palla verso la nostra porta
