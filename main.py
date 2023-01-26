@@ -29,14 +29,14 @@ class BoostManagement:
 
     def get_closest_boost(self, max_distance: float):
         closest_boost = None
-        closest_distance = 99999
+        closest_distance = 10000
 
         # Usiamo una variabile per memorizzare il boost più vicino
         # invece di scorrere la lista di boost ogni volta che viene chiamata questa funzione
         if not hasattr(self, '_cached_closest_boost'):
             self._cached_closest_boost = None
         if not hasattr(self, '_cached_closest_boost_distance'):
-            self._cached_closest_boost_distance = 99999
+            self._cached_closest_boost_distance = 10000
 
         # Controlliamo se il boost più vicino è ancora valido e se è ancora attivo
         if self._cached_closest_boost is not None and self._cached_closest_boost.active:
@@ -69,11 +69,13 @@ class Strategy:
         shots = find_hits(self.agent, targets)
         if len(shots["goal"]) > 0:
             print("i'll attack")
-            return self.agent.set_intent(shots["goal"][0])
+            self.agent.set_intent(shots["goal"][0])
+        # elif (self.agent.me.location - self.agent.ball.location).magnitude() < (self.agent.foes[0].location - self.agent.ball.location).magnitude():
+        #     self.agent.set_intent(short_shot(self.agent.foe_goal.location))
         else:
             # Altrimenti, andiamo verso la nostra porta
             self.agent.set_intent(
-                goto(self.agent.friend_goal.location - Vector3(0, side(self.agent.team) * 200, 0), self.agent.ball.location, 1 or -1))
+                goto(self.agent.friend_goal.location - Vector3(0, side(self.agent.team) * 200, 0), self.agent.foes[0].location))
 
     def intercept(self):
         # Altrimenti, portiamo la palla verso la nostra porta
@@ -89,11 +91,11 @@ class Strategy:
             upfield_left, midleft), "right": (midright, upfield_right)}
         shots = find_hits(self.agent, targets)
         if len(shots["my_goal"]) > 0:
-            return self.agent.set_intent(shots["my_goal"][0])
+            self.agent.set_intent(shots["my_goal"][0])
         elif len(shots["right"]) > 0:
-            return self.agent.set_intent(shots["right"][0])
+            self.agent.set_intent(shots["right"][0])
         elif len(shots["left"]) > 0:
-            return self.agent.set_intent(shots["left"][0])
+            self.agent.set_intent(shots["left"][0])
 
     def execute(self):
         print(self.agent.ball.location.y * side(self.agent.team))
@@ -111,7 +113,7 @@ class Strategy:
                     # Intercettiamo la palla
                     self.intercept()
                 else:
-                    return self.agent.set_intent(short_shot(
+                    self.agent.set_intent(short_shot(
                         self.agent.foe_goal.location))
             else:
                 # Attachiamo
@@ -120,7 +122,7 @@ class Strategy:
             # Prima, cerca di raccogliere boost se necessario
             boost = self.boost_management.get_boost_if_needed(2000)
             if boost is not None:
-                return self.agent.set_intent(goto(boost.location))
+                self.agent.set_intent(goto_boost(boost))
             # La palla si trova nella metà campo avversaria, quindi andiamo in attacco
             self.attack()
 
@@ -135,5 +137,8 @@ class Bot(GoslingAgent):
         if self.kickoff_flag:
             self.set_intent(kickoff())
             return
+
+        # if self.me.location.x >= 4096:
+        #     self.set_intent(flip(self.ball.location))
 
         self.strategy.execute()
