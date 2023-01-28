@@ -12,8 +12,16 @@ import rlbot.utils.structures.ball_prediction_struct
 
 class BoostManagement:
     def __init__(self, agent: GoslingAgent):
+
+        BOOSTS = [Vector3(- 3072.0, - 4096.0, 73.0),
+                  Vector3(3072.0, - 4096.0, 73.0),
+                  Vector3(- 3072.0, 4096.0, 73.0),
+                  Vector3(3072.0, 4096.0, 73.0),
+                  Vector3(- 3584.0, 0.0, 73.0),
+                  Vector3(3584.0, 0.0, 73.0)]
+
         self.agent = agent
-        self.big_boosts = [boost for boost in agent.boosts if boost.large]
+        self.big_boosts = [boost for boost in BOOSTS]
 
     def get_boost_if_needed(self, max_distance: float):
         ball_location = self.agent.ball.location
@@ -39,18 +47,18 @@ class BoostManagement:
             self._cached_closest_boost_distance = 10000
 
         # Controlliamo se il boost più vicino è ancora valido e se è ancora attivo
-        if self._cached_closest_boost is not None and self._cached_closest_boost.active:
+        if self._cached_closest_boost is not None:
             closest_boost = self._cached_closest_boost
             closest_distance = self._cached_closest_boost_distance
         # Se il boost non è più valido o non è più attivo, cerchiamo il boost più vicino
         else:
             for boost in self.big_boosts:
-                if boost.active:
-                    distance = (self.agent.me.location -
-                                boost.location).magnitude()
-                    if distance < max_distance and (closest_boost is None or distance < closest_distance):
-                        closest_boost = boost
-                        closest_distance = distance
+                # if boost.active:
+                distance = (self.agent.me.location -
+                            boost).magnitude()
+                if distance < max_distance and (closest_boost is None or distance < closest_distance):
+                    closest_boost = boost
+                    closest_distance = distance
             if closest_boost is not None:
                 self._cached_closest_boost = closest_boost
                 self._cached_closest_boost_distance = closest_distance
@@ -122,7 +130,7 @@ class Strategy:
             # Prima, cerca di raccogliere boost se necessario
             boost = self.boost_management.get_boost_if_needed(2000)
             if boost is not None:
-                self.agent.set_intent(goto_boost(boost))
+                return self.agent.set_intent(goto(boost))
             # La palla si trova nella metà campo avversaria, quindi andiamo in attacco
             self.attack()
 
