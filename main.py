@@ -77,7 +77,7 @@ class Strategy:
         shots = find_hits(self.agent, targets)
         if len(shots["goal"]) > 0:
             print("i'll attack")
-            self.agent.set_intent(shots["goal"][0])
+            return self.agent.set_intent(shots["goal"][0])
         # elif (self.agent.me.location - self.agent.ball.location).magnitude() < (self.agent.foes[0].location - self.agent.ball.location).magnitude():
         #     self.agent.set_intent(short_shot(self.agent.foe_goal.location))
         else:
@@ -99,11 +99,11 @@ class Strategy:
             upfield_left, midleft), "right": (midright, upfield_right)}
         shots = find_hits(self.agent, targets)
         if len(shots["my_goal"]) > 0:
-            self.agent.set_intent(shots["my_goal"][0])
+            return self.agent.set_intent(shots["my_goal"][0])
         elif len(shots["right"]) > 0:
-            self.agent.set_intent(shots["right"][0])
+            return self.agent.set_intent(shots["right"][0])
         elif len(shots["left"]) > 0:
-            self.agent.set_intent(shots["left"][0])
+            return self.agent.set_intent(shots["left"][0])
 
     def execute(self):
         print(self.agent.ball.location.y * side(self.agent.team))
