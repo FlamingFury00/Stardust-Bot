@@ -13,12 +13,9 @@ import rlbot.utils.structures.ball_prediction_struct
 class BoostManagement:
     def __init__(self, agent: GoslingAgent):
 
-        BOOSTS = [Vector3(- 3072.0, - 4096.0, 73.0),
-                  Vector3(3072.0, - 4096.0, 73.0),
-                  Vector3(- 3072.0, 4096.0, 73.0),
-                  Vector3(3072.0, 4096.0, 73.0),
-                  Vector3(- 3584.0, 0.0, 73.0),
-                  Vector3(3584.0, 0.0, 73.0)]
+        BOOSTS = [Vector3(3072.0, side(agent.team) * 4096.0, 73.0),
+                  Vector3(- 3072.0, side(agent.team) * 4096.0, 73.0),
+                  Vector3(side(agent.team) * 3584.0, 0.0, 73.0)]
 
         self.agent = agent
         self.big_boosts = [boost for boost in BOOSTS]
@@ -120,9 +117,12 @@ class Strategy:
                 if goal_distance < ball_distance:
                     # Intercettiamo la palla
                     self.intercept()
-                else:
-                    self.agent.set_intent(short_shot(
+                elif self.agent.me.boost >= 50:
+                    return self.agent.set_intent(short_shot(
                         self.agent.foe_goal.location))
+                else:
+                    self.agent.set_intent(
+                        goto(self.agent.ball.location, self.agent.foes[0].location))
             else:
                 # Attachiamo
                 self.attack()
