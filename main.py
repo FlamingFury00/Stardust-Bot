@@ -109,26 +109,25 @@ class Strategy:
             # Verifica se siamo abbastanza vicini alla palla per intercettarla
             ball_distance = (self.agent.ball.location -
                              self.agent.me.location).magnitude()
-            if ball_distance < 500:
-                # Calcola la distanza tra il nostro bot e la nostra porta
-                goal_distance = (self.agent.me.location -
-                                 self.agent.friend_goal.location).magnitude()
-                # Verifica se siamo più vicini alla nostra porta della palla
-                if goal_distance < ball_distance:
-                    # Intercettiamo la palla
-                    self.intercept()
-                elif self.agent.me.boost >= 50:
-                    return self.agent.set_intent(short_shot(
-                        self.agent.foe_goal.location))
-                else:
-                    self.agent.set_intent(
-                        goto(self.agent.ball.location, self.agent.foes[0].location))
+            # if ball_distance < 500:
+            # Calcola la distanza tra il nostro bot e la nostra porta
+            goal_distance = (self.agent.me.location -
+                             self.agent.friend_goal.location).magnitude()
+            # Verifica se siamo più vicini alla nostra porta della palla
+            if goal_distance < ball_distance:
+                # Intercettiamo la palla
+                self.intercept()
+            # elif self.agent.me.boost >= 50:
+            #     return self.agent.set_intent(short_shot(
+            #         self.agent.foe_goal.location))
             else:
-                # Attachiamo
                 self.attack()
+            # else:
+            #     # Attachiamo
+            #     self.attack()
         else:
             # Prima, cerca di raccogliere boost se necessario
-            boost = self.boost_management.get_boost_if_needed(2000)
+            boost = self.boost_management.get_boost_if_needed(1500)
             if boost is not None:
                 return self.agent.set_intent(goto(boost))
             # La palla si trova nella metà campo avversaria, quindi andiamo in attacco

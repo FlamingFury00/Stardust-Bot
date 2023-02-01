@@ -212,8 +212,8 @@ class goal_object:
         team = 1 if team == 1 else -1
         self.location = Vector3(0, team * 5100, 320)  # center of goal line
         # Posts are closer to x=750, but this allows the bot to be a little more accurate
-        self.left_post = Vector3(team * 850, team * 5100, 320)
-        self.right_post = Vector3(-team * 850, team * 5100, 320)
+        self.left_post = Vector3(team * 800, team * 5100, 320)
+        self.right_post = Vector3(-team * 800, team * 5100, 320)
 
 
 class game_object:
