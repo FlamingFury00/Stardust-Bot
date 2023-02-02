@@ -27,7 +27,7 @@ class BoostManagement:
         enemy_distances = [(ball_location - enemy.location).magnitude()
                            for enemy in self.agent.foes]
         # controlla se c'è un avversario più vicino della palla
-        if min(enemy_distances) < distance_to_ball and self.agent.me.boost < 50 and distance_to_ball > 1000:
+        if min(enemy_distances) < distance_to_ball and self.agent.me.boost < 50 and distance_to_ball > 1500:
             return self.get_closest_boost(max_distance)
         else:
             return None
@@ -81,6 +81,7 @@ class Strategy:
             # Altrimenti, andiamo verso la nostra porta
             self.agent.set_intent(
                 goto(self.agent.friend_goal.location - Vector3(0, side(self.agent.team) * 200, 0), self.agent.foes[0].location))
+            return
 
     def intercept(self):
         # Altrimenti, portiamo la palla verso la nostra porta
@@ -96,7 +97,8 @@ class Strategy:
             upfield_left, midleft), "right": (midright, upfield_right)}
         shots = find_hits(self.agent, targets)
         if len(shots["my_goal"]) > 0:
-            return self.agent.set_intent(shots["my_goal"][0])
+            self.agent.set_intent(shots["my_goal"][0])
+            return
         elif len(shots["right"]) > 0:
             return self.agent.set_intent(shots["right"][0])
         elif len(shots["left"]) > 0:
@@ -117,9 +119,10 @@ class Strategy:
             if goal_distance < ball_distance:
                 # Intercettiamo la palla
                 self.intercept()
-            # elif self.agent.me.boost >= 50:
-            #     return self.agent.set_intent(short_shot(
-            #         self.agent.foe_goal.location))
+            elif self.agent.me.boost >= 50 and goal_distance < ball_distance:
+                self.agent.set_intent(short_shot(
+                    self.agent.foe_goal.location))
+                return
             else:
                 self.attack()
             # else:
