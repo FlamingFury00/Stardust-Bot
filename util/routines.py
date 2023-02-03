@@ -148,12 +148,12 @@ class flip():
         self.yaw = abs(self.vector[1]) * sign(self.vector[1])
         self.cancel = cancel
         # the time the jump began
-        self.time = -0.5
+        self.time = -1
         # keeps track of the frames the jump button has been released
         self.counter = 0
 
     def run(self, agent):
-        if self.time == -0.5:
+        if self.time == -1:
             elapsed = 0
             self.time = agent.time
         else:
@@ -288,11 +288,11 @@ class jump_shot():
         # 173 is the 93uu ball radius + a bit more to account for the car's hitbox
         self.dodge_point = self.ball_location - (self.shot_vector * 173)
         # Ratio is how aligned the car is. Low ratios (<0.5) aren't likely to be hit properly
-        self.ratio = 1
+        self.ratio = ratio
         # whether the car should attempt this backwards
         self.direction = direction
         # Intercept speed not implemented
-        self.speed_desired = 2300
+        self.speed_desired = speed
         # controls how soon car will jump based on acceleration required. max 584
         # bigger = later, which allows more time to align with shot vector
         #smaller = sooner

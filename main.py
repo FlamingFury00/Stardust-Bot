@@ -119,7 +119,7 @@ class Strategy:
             if goal_distance < ball_distance:
                 # Intercettiamo la palla
                 self.intercept()
-            elif self.agent.me.boost >= 50 and goal_distance < ball_distance:
+            elif self.agent.me.boost >= 50 and (goal_distance < ball_distance or (self.agent.foes[0].location - self.agent.ball.location).magnitude() < 500) or (self.agent.friend_goal.location - self.agent.ball.location).magnitude() < 1000:
                 self.agent.set_intent(short_shot(
                     self.agent.foe_goal.location))
                 return
