@@ -208,10 +208,10 @@ class goto():
         angles = defaultPD(agent, local_target, self.direction)
         defaultThrottle(agent, 2300, self.direction)
 
-        agent.controller.boost = False if agent.me.airborne or abs(
-            angles[1]) > 0.3 else agent.controller.boost
-        agent.controller.handbrake = True if abs(
-            angles[1]) > 2.3 else agent.controller.handbrake
+        agent.controller.boost = False if abs(
+            angles[1]) > 0.3 or agent.me.airborne else agent.controller.boost
+        agent.controller.handbrake = True if abs(angles[1]) > 2 or local_target.magnitude() < find_turn_radius(
+            abs(agent.me.local(agent.me.velocity)[0])) * abs(angles[1]) else agent.controller.handbrake
 
         velocity = 1+agent.me.velocity.magnitude()
         if distance_remaining < 350:
@@ -357,8 +357,8 @@ class jump_shot():
 
         agent.controller.boost = False if abs(
             angles[1]) > 0.3 or agent.me.airborne else agent.controller.boost
-        agent.controller.handbrake = True if abs(
-            angles[1]) > 2.3 and self.direction == 1 else agent.controller.handbrake
+        agent.controller.handbrake = True if abs(angles[1]) > 2 or local_final_target.magnitude() < find_turn_radius(
+            abs(agent.me.local(agent.me.velocity)[0])) * abs(angles[1]) else agent.controller.handbrake
 
         if not self.jumping:
             if raw_time_remaining <= 0.0 or (speed_required - 2300) * time_remaining > 60 or not shot_valid(agent, self):
@@ -409,20 +409,56 @@ class kickoff():
 class recovery():
     # Point towards our velocity vector and land upright, unless we aren't moving very fast
     # A vector can be provided to control where the car points when it lands
-    def __init__(self, target=None):
+    def __init__(self, target=None, boosting=False):
         self.target = target
+        self.boosting = boosting
 
     def run(self, agent):
         if self.target != None:
             local_target = agent.me.local(
-                (self.target-agent.me.location).flatten())
+                (self.target-agent.me.location).flatten().normalize())
         else:
-            local_target = agent.me.local(agent.me.velocity.flatten())
+            local_target = agent.me.local(
+                agent.me.velocity.flatten().normalize())
 
-        defaultPD(agent, local_target)
+        angles = defaultPD(agent, local_target)
         agent.controller.throttle = 1
+        agent.controller.boost = self.boosting
+
         if not agent.me.airborne:
             agent.clear_intent()
+        elif not agent.me.doublejumped:
+            agent.clear_intent()
+            # Wavedash recovery!
+            agent.set_intent(wavedash())
+
+
+class wavedash():
+    # this routine will wavedash on recovery!
+    def __init__(self):
+        self.step = 0
+
+    def run(self, agent):
+        if agent.me.velocity.flatten().magnitude() > 100:
+            target = agent.me.velocity.flatten().normalize()*100 + Vector3(0, 0, 50)
+        else:
+            target = agent.me.forward.flatten()*100 + Vector3(0, 0, 50)
+        local_target = agent.me.local(target)
+        defaultPD(agent, local_target)
+        if self.step < 6 and not agent.me.airborne:
+            self.step += 1
+            if self.step < 3:
+                agent.controller.jump = True
+            else:
+                agent.controller.jump = False
+        else:
+            if not agent.me.airborne or agent.me.doublejumped:
+                agent.clear_intent()
+            elif agent.me.location.z + agent.me.velocity.z * 0.2 < 5:
+                agent.controller.jump = True
+                agent.controller.pitch = -1
+                agent.controller.yaw = agent.controller.roll = 0
+                agent.clear_intent()
 
 
 class short_shot():
@@ -451,7 +487,7 @@ class short_shot():
 
         # Some adjustment to the final target to ensure we don't try to dirve through any goalposts to reach it
         if abs(agent.me.location[1]) > 5150:
-            final_target[0] = cap(final_target[0], -750, 750)
+            final_target[0] = cap(final_target[0], -850, 850)
 
         agent.line(final_target-Vector3(0, 0, 100), final_target +
                    Vector3(0, 0, 100), [255, 255, 255])
@@ -465,5 +501,5 @@ class short_shot():
         agent.controller.handbrake = True if abs(
             angles[1]) > 2.3 else agent.controller.handbrake
 
-        if abs(angles[1]) < 0.05 and (eta < 0.45 or distance < 150):
+        if abs(angles[1]) < 0.05 and (eta < 0.40 or distance < 100):
             agent.set_intent(flip(agent.me.local(car_to_ball)))

@@ -6,10 +6,26 @@ from util.objects import Vector3
 
 def backsolve(target, car, time, gravity=650):
     # Finds the acceleration required for a car to reach a target in a specific amount of time
-    velocity_required = (target - car.location) / time
-    acceleration_required = velocity_required - car.velocity
-    acceleration_required[2] += (gravity * time)
-    return acceleration_required
+    d = target - car.location
+    dvx = ((d[0]/time) - car.velocity[0]) / time
+    dvy = ((d[1]/time) - car.velocity[1]) / time
+    dvz = (((d[2]/time) - car.velocity[2]) / time) + (gravity * time)
+    return Vector3(dvx, dvy, dvz)
+
+
+def find_turn_radius(speed):
+    if (speed <= 500):
+        radius = lerp(145, 251, speed / 500)
+    elif (speed <= 1000):
+        radius = lerp(251, 425, (speed - 500) / 500)
+    elif (speed <= 1500):
+        radius = lerp(425, 727, (speed - 1000) / 500)
+    elif (speed <= 1750):
+        radius = lerp(727, 909, (speed - 1500) / 250)
+    else:
+        radius = lerp(909, 1136, (speed - 1750) / 550)
+
+    return radius
 
 
 def cap(x, low, high):

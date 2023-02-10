@@ -6,9 +6,6 @@ from util.tools import find_hits
 from typing import Optional
 from math import atan2, pi
 
-import rlbot.utils.structures.game_data_struct
-import rlbot.utils.structures.ball_prediction_struct
-
 
 class BoostManagement:
     def __init__(self, agent: GoslingAgent):
@@ -75,13 +72,13 @@ class Strategy:
         if len(shots["goal"]) > 0:
             print("i'll attack")
             return self.agent.set_intent(shots["goal"][0])
-        # elif (self.agent.me.location - self.agent.ball.location).magnitude() < (self.agent.foes[0].location - self.agent.ball.location).magnitude():
+        # elif (self.agent.me.location - self.agent.ball.location).magnitude() < (self.agent.foes[0].location - self.agent.ball.location).magnitude() and self.agent.me.boost >= 50:
         #     self.agent.set_intent(short_shot(self.agent.foe_goal.location))
+        #     return
         else:
             # Altrimenti, andiamo verso la nostra porta
             self.agent.set_intent(
-                goto(self.agent.friend_goal.location - Vector3(0, side(self.agent.team) * 200, 0), self.agent.foes[0].location))
-            return
+                goto(self.agent.friend_goal.location - Vector3(0, side(self.agent.team) * 800, 0), self.agent.friend_goal.location))
 
     def intercept(self):
         # Altrimenti, portiamo la palla verso la nostra porta
@@ -97,15 +94,21 @@ class Strategy:
             upfield_left, midleft), "right": (midright, upfield_right)}
         shots = find_hits(self.agent, targets)
         if len(shots["my_goal"]) > 0:
-            self.agent.set_intent(shots["my_goal"][0])
-            return
+            return self.agent.set_intent(shots["my_goal"][0])
         elif len(shots["right"]) > 0:
             return self.agent.set_intent(shots["right"][0])
         elif len(shots["left"]) > 0:
             return self.agent.set_intent(shots["left"][0])
+        # else:
+        #     self.agent.set_intent(short_shot(self.agent.foe_goal.location))
+        #     return
 
     def execute(self):
         print(self.agent.ball.location.y * side(self.agent.team))
+        if (self.agent.foe_goal.location - self.agent.ball.location).magnitude() < 1500:
+            boost = self.boost_management.get_boost_if_needed(3000)
+            if boost is not None:
+                return self.agent.set_intent(goto(boost))
         # Verifica se la palla si trova nella nostra metà campo
         if self.agent.ball.location.y * side(self.agent.team) > 0:
             # Verifica se siamo abbastanza vicini alla palla per intercettarla
@@ -119,22 +122,25 @@ class Strategy:
             if goal_distance < ball_distance:
                 # Intercettiamo la palla
                 self.intercept()
-            elif self.agent.me.boost >= 50 and (goal_distance < ball_distance or (self.agent.foes[0].location - self.agent.ball.location).magnitude() < 500) or (self.agent.friend_goal.location - self.agent.ball.location).magnitude() < 1000:
-                self.agent.set_intent(short_shot(
+            elif self.agent.me.boost >= 50 and (goal_distance < ball_distance or (self.agent.foes[0].location - self.agent.ball.location).magnitude() < 500 or (self.agent.friend_goal.location - self.agent.ball.location).magnitude() < 1000):
+                return self.agent.set_intent(short_shot(
                     self.agent.foe_goal.location))
-                return
             else:
                 self.attack()
             # else:
             #     # Attachiamo
             #     self.attack()
-        else:
+        elif (self.agent.foes[0].location - self.agent.ball.location).magnitude() > 500:
             # Prima, cerca di raccogliere boost se necessario
             boost = self.boost_management.get_boost_if_needed(1500)
             if boost is not None:
-                return self.agent.set_intent(goto(boost))
+                self.agent.set_intent(goto(boost))
+                return
             # La palla si trova nella metà campo avversaria, quindi andiamo in attacco
             self.attack()
+        else:
+            self.agent.set_intent(
+                goto(self.agent.friend_goal.location - Vector3(0, side(self.agent.team) * 800, 0)))
 
 
 class Bot(GoslingAgent):
