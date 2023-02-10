@@ -130,7 +130,7 @@ class Strategy:
             # else:
             #     # Attachiamo
             #     self.attack()
-        elif (self.agent.foes[0].location - self.agent.ball.location).magnitude() > 500:
+        elif (self.agent.foes[0].location - self.agent.ball.location).magnitude() > 1500:
             # Prima, cerca di raccogliere boost se necessario
             boost = self.boost_management.get_boost_if_needed(1500)
             if boost is not None:

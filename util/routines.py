@@ -487,7 +487,7 @@ class short_shot():
 
         # Some adjustment to the final target to ensure we don't try to dirve through any goalposts to reach it
         if abs(agent.me.location[1]) > 5150:
-            final_target[0] = cap(final_target[0], -850, 850)
+            final_target[0] = cap(final_target[0], -750, 750)
 
         agent.line(final_target-Vector3(0, 0, 100), final_target +
                    Vector3(0, 0, 100), [255, 255, 255])
