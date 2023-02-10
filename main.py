@@ -105,7 +105,7 @@ class Strategy:
 
     def execute(self):
         print(self.agent.ball.location.y * side(self.agent.team))
-        if (self.agent.foe_goal.location - self.agent.ball.location).magnitude() < 1500:
+        if (self.agent.foe_goal.location - self.agent.ball.location).magnitude() > 1500:
             boost = self.boost_management.get_boost_if_needed(3000)
             if boost is not None:
                 return self.agent.set_intent(goto(boost))
