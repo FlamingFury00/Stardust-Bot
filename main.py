@@ -130,7 +130,7 @@ class Strategy:
             # else:
             #     # Attachiamo
             #     self.attack()
-        elif (self.agent.foes[0].location - self.agent.ball.location).magnitude() > 1500:
+        else:
             # Prima, cerca di raccogliere boost se necessario
             boost = self.boost_management.get_boost_if_needed(1500)
             if boost is not None:
@@ -138,9 +138,6 @@ class Strategy:
                 return
             # La palla si trova nella metà campo avversaria, quindi andiamo in attacco
             self.attack()
-        else:
-            self.agent.set_intent(
-                goto(self.agent.friend_goal.location - Vector3(0, side(self.agent.team) * 800, 0)))
 
 
 class Bot(GoslingAgent):
