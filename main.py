@@ -71,14 +71,14 @@ class Strategy:
         shots = find_hits(self.agent, targets)
         if len(shots["goal"]) > 0:
             print("i'll attack")
-            return self.agent.set_intent(shots["goal"][0])
+            self.agent.set_intent(shots["goal"][0])
         # elif (self.agent.me.location - self.agent.ball.location).magnitude() < (self.agent.foes[0].location - self.agent.ball.location).magnitude() and self.agent.me.boost >= 50:
         #     self.agent.set_intent(short_shot(self.agent.foe_goal.location))
         #     return
         else:
             # Altrimenti, andiamo verso la nostra porta
             self.agent.set_intent(
-                goto(self.agent.friend_goal.location - Vector3(0, side(self.agent.team) * 800, 0), self.agent.friend_goal.location))
+                goto(self.agent.friend_goal.location - Vector3(0, side(self.agent.team) * 600, 0)))
 
     def intercept(self):
         # Altrimenti, portiamo la palla verso la nostra porta
@@ -94,7 +94,7 @@ class Strategy:
             upfield_left, midleft), "right": (midright, upfield_right)}
         shots = find_hits(self.agent, targets)
         if len(shots["my_goal"]) > 0:
-            return self.agent.set_intent(shots["my_goal"][0])
+            self.agent.set_intent(shots["my_goal"][0])
         elif len(shots["right"]) > 0:
             return self.agent.set_intent(shots["right"][0])
         elif len(shots["left"]) > 0:
@@ -122,7 +122,7 @@ class Strategy:
             if goal_distance < ball_distance:
                 # Intercettiamo la palla
                 self.intercept()
-            elif self.agent.me.boost >= 50 and (goal_distance < ball_distance or (self.agent.foes[0].location - self.agent.ball.location).magnitude() < 500 or (self.agent.friend_goal.location - self.agent.ball.location).magnitude() < 1000):
+            elif self.agent.me.boost >= 50 and ((self.agent.foes[0].location - self.agent.ball.location).magnitude() > 500 or (self.agent.friend_goal.location - self.agent.ball.location).magnitude() < 1000):
                 return self.agent.set_intent(short_shot(
                     self.agent.foe_goal.location))
             else:
