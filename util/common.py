@@ -7,20 +7,20 @@ from util.objects import Vector3
 def backsolve(target, car, time, gravity=650):
     # Finds the acceleration required for a car to reach a target in a specific amount of time
     d = target - car.location
-    dvx = ((d[0]/time) - car.velocity[0]) / time
-    dvy = ((d[1]/time) - car.velocity[1]) / time
-    dvz = (((d[2]/time) - car.velocity[2]) / time) + (gravity * time)
+    dvx = ((d[0] / time) - car.velocity[0]) / time
+    dvy = ((d[1] / time) - car.velocity[1]) / time
+    dvz = (((d[2] / time) - car.velocity[2]) / time) + (gravity * time)
     return Vector3(dvx, dvy, dvz)
 
 
 def find_turn_radius(speed):
-    if (speed <= 500):
+    if speed <= 500:
         radius = lerp(145, 251, speed / 500)
-    elif (speed <= 1000):
+    elif speed <= 1000:
         radius = lerp(251, 425, (speed - 500) / 500)
-    elif (speed <= 1500):
+    elif speed <= 1500:
         radius = lerp(425, 727, (speed - 1000) / 500)
-    elif (speed <= 1750):
+    elif speed <= 1750:
         radius = lerp(727, 909, (speed - 1500) / 250)
     else:
         radius = lerp(909, 1136, (speed - 1750) / 550)
@@ -47,15 +47,16 @@ def defaultPD(agent, local_target, direction=1.0):
         math.atan2(local_target[2], local_target[0]),
         # angle required to yaw towards target
         math.atan2(local_target[1], local_target[0]),
-        math.atan2(up[1], up[2])]  # angle required to roll upright
+        math.atan2(up[1], up[2]),
+    ]  # angle required to roll upright
     # Once we have the angles we need to rotate, we feed them into PD loops to determing the controller inputs
     agent.controller.steer = steerPD(target_angles[1], 0) * direction
     agent.controller.pitch = steerPD(
-        target_angles[0], agent.me.angular_velocity[1]/4)
+        target_angles[0], agent.me.angular_velocity[1] / 4)
     agent.controller.yaw = steerPD(
-        target_angles[1], -agent.me.angular_velocity[2]/4)
+        target_angles[1], -agent.me.angular_velocity[2] / 4)
     agent.controller.roll = steerPD(
-        target_angles[2], agent.me.angular_velocity[0]/2)
+        target_angles[2], agent.me.angular_velocity[0] / 2)
     # Returns the angles, which can be useful for other purposes
     return target_angles
 
@@ -64,8 +65,12 @@ def defaultThrottle(agent, target_speed, direction=1.0):
     # accelerates the car to a desired speed using throttle and boost
     car_speed = agent.me.local(agent.me.velocity)[0]
     t = (target_speed * direction) - car_speed
-    agent.controller.throttle = cap((t**2) * sign(t)/1000, -1.0, 1.0)
-    agent.controller.boost = True if t > 150 and car_speed < 2275 and agent.controller.throttle == 1.0 else False
+    agent.controller.throttle = cap((t**2) * sign(t) / 1000, -1.0, 1.0)
+    agent.controller.boost = (
+        True
+        if t > 150 and car_speed < 2275 and agent.controller.throttle == 1.0
+        else False
+    )
     return car_speed
 
 
@@ -90,7 +95,7 @@ def find_slope(shot_vector, car_to_target):
     # 1.0 = you're about 45 degrees offcenter
     d = shot_vector.dot(car_to_target)
     e = abs(shot_vector.cross((0, 0, 1)).dot(car_to_target))
-    return cap(d / e if e != 0 else 10*sign(d), -3.0, 3.0)
+    return cap(d / e if e != 0 else 10 * sign(d), -3.0, 3.0)
 
 
 def post_correction(ball_location, left_target: Vector3, right_target: Vector3):
@@ -99,19 +104,27 @@ def post_correction(ball_location, left_target: Vector3, right_target: Vector3):
     # We purposely make this a bit larger so that our shots have a higher chance of success
     ball_radius = 110
     goal_line_perp = (right_target - left_target).cross((0, 0, 1))
-    left_adjusted = left_target + \
-        ((left_target - ball_location).normalize().cross((0, 0, -1))*ball_radius)
-    right_adjusted = right_target + \
-        ((right_target - ball_location).normalize().cross((0, 0, 1))*ball_radius)
-    left_corrected = left_target if (
-        left_adjusted-left_target).dot(goal_line_perp) > 0.0 else left_adjusted
-    right_corrected = right_target if (
-        right_adjusted-right_target).dot(goal_line_perp) > 0.0 else right_adjusted
+    left_adjusted = left_target + (
+        (left_target - ball_location).normalize().cross((0, 0, -1)) * ball_radius
+    )
+    right_adjusted = right_target + (
+        (right_target - ball_location).normalize().cross((0, 0, 1)) * ball_radius
+    )
+    left_corrected = (
+        left_target
+        if (left_adjusted - left_target).dot(goal_line_perp) > 0.0
+        else left_adjusted
+    )
+    right_corrected = (
+        right_target
+        if (right_adjusted - right_target).dot(goal_line_perp) > 0.0
+        else right_adjusted
+    )
 
-    difference = (right_corrected - left_corrected)
+    difference = right_corrected - left_corrected
     new_goal_line = difference.normalize()
     new_goal_width = difference.magnitude()
-    new_goal_perp = (new_goal_line.cross((0, 0, 1)))
+    new_goal_perp = new_goal_line.cross((0, 0, 1))
     goal_center = left_corrected + (new_goal_line * new_goal_width * 0.5)
     ball_to_goal = (goal_center - ball_location).normalize()
 
@@ -122,9 +135,9 @@ def post_correction(ball_location, left_target: Vector3, right_target: Vector3):
 
 def quadratic(a, b, c):
     # Returns the two roots of a quadratic
-    inside = math.sqrt((b*b) - (4*a*c))
+    inside = math.sqrt((b * b) - (4 * a * c))
     if a != 0:
-        return (-b + inside)/(2*a), (-b - inside)/(2*a)
+        return (-b + inside) / (2 * a), (-b - inside) / (2 * a)
     else:
         return -1, -1
 
@@ -135,9 +148,9 @@ def shot_valid(agent, shot, threshold=45):
     # threshold controls the tolerance we allow the ball to be off by
     slices = agent.get_ball_prediction_struct().slices
     soonest = 0
-    latest = len(slices)-1
-    while len(slices[soonest:latest+1]) > 2:
-        midpoint = (soonest+latest) // 2
+    latest = len(slices) - 1
+    while len(slices[soonest: latest + 1]) > 2:
+        midpoint = (soonest + latest) // 2
         if slices[midpoint].game_seconds > shot.intercept_time:
             latest = midpoint
         else:
@@ -145,13 +158,74 @@ def shot_valid(agent, shot, threshold=45):
     # preparing to interpolate between the selected slices
     dt = slices[latest].game_seconds - slices[soonest].game_seconds
     time_from_soonest = shot.intercept_time - slices[soonest].game_seconds
-    slopes = (Vector3(slices[latest].physics.location) -
-              Vector3(slices[soonest].physics.location)) * (1/dt)
+    slopes = (
+        Vector3(slices[latest].physics.location)
+        - Vector3(slices[soonest].physics.location)
+    ) * (1 / dt)
     # Determining exactly where the ball will be at the given shot's intercept_time
-    predicted_ball_location = Vector3(
-        slices[soonest].physics.location) + (slopes * time_from_soonest)
+    predicted_ball_location = Vector3(slices[soonest].physics.location) + (
+        slopes * time_from_soonest
+    )
     # Comparing predicted location with where the shot expects the ball to be
     return (shot.ball_location - predicted_ball_location).magnitude() < threshold
+
+
+def eta(car, target=None, direction=None, distance=None):
+    if direction != None and distance != None:
+        forward_angle = direction.angle(
+            car.forward) * cap(distance - 500, 0, 500) / 500
+        car_to_target = target - car.location
+        int_vel = cap(car.velocity.magnitude(), 1410, 2300)
+        return distance / cap(int_vel + 1000 * car.boost / 30, 1410, 2300) + (forward_angle * 0.318)
+    else:
+        car_to_target = target - car.location
+        forward_angle = car_to_target.angle(
+            car.forward) * cap(car_to_target.magnitude() - 500, 0, 500) / 500
+        int_vel = cap(car.velocity.magnitude(), 1410, 2300)
+        return car_to_target.magnitude() / cap(int_vel + 1000 * car.boost / 30, 1410, 2300) + (forward_angle * 0.318)
+
+
+def distance_to_wall(point):
+    # determines how close the car is to the wall
+    abs_point = Vector3(abs(point[0]), abs(point[1]), abs(point[2]))
+
+    distance_to_side_wall = 4096 - \
+        abs_point[0] if abs_point[1] < 5120 else 800 - abs_point[0]
+    distance_to_back_wall = 5120 - \
+        abs_point[1] if abs_point[0] > 800 else 5920 - abs_point[1]
+    distance_to_corner = math.sqrt(
+        2) * ((8064 - abs_point[0] - abs_point[1]) / 2)
+    if distance_to_corner > distance_to_side_wall < distance_to_back_wall:
+        return distance_to_side_wall, Vector3(sign(point[0]), 0, 0)
+    elif distance_to_corner > distance_to_side_wall > distance_to_back_wall:
+        return distance_to_back_wall, Vector3(0, sign(point[1]), 0)
+    else:
+        return distance_to_corner, Vector3(sign(point[0]) / math.sqrt(2), sign(point[1]) / math.sqrt(2), 0)
+
+
+def is_on_wall(point, try_to_reach=False):
+    if hasattr(point, "__getitem__"):
+        distance = distance_to_wall(point)[0]
+
+        if try_to_reach:
+            return distance < 300 < point[2]
+        else:
+            return distance < 150 or distance < point[2] + 100 < 400
+    else:
+        return point.location.z > 50 and not point.airborne
+
+
+def within_turn_radius(car, location):
+    location = location.flatten()
+    turn_radius = find_turn_radius(
+        math.cos(car.velocity.angle(car.forward)) * car.velocity.magnitude())
+
+    left_turn_center = (
+        car.location + car.left.flatten().normalize() * turn_radius).flatten()
+    right_turn_center = (
+        car.location - car.left.flatten().normalize() * turn_radius).flatten()
+
+    return (location.distance(left_turn_center) < turn_radius or location.distance(right_turn_center) < turn_radius)
 
 
 def side(x):
@@ -173,7 +247,7 @@ def sign(x):
 
 def steerPD(angle, rate):
     # A Proportional-Derivative control loop used for defaultPD
-    return cap(((35*(angle+rate))**3)/10, -1.0, 1.0)
+    return cap(((35 * (angle + rate)) ** 3) / 10, -1.0, 1.0)
 
 
 def lerp(a, b, t):
@@ -187,4 +261,4 @@ def invlerp(a, b, v):
     # Inverse linear interpolation from a to b with value v
     # For instance, it returns 0 if v == a, and returns 1 if v == b, and returns 0.5 if v is exactly between a and b
     # Works for both numbers and Vector3s
-    return (v - a)/(b - a)
+    return (v - a) / (b - a)
