@@ -16,6 +16,8 @@ class GoslingAgent(BaseAgent):
         self.foes = []
         # This holds the carobject for our agent
         self.me = car_object(self.index)
+        self.previous_errors = [0, 0, 0]
+        self.previous_throttle_error = 0
 
         self.ball = ball_object()
         self.game = game_object()
@@ -29,6 +31,7 @@ class GoslingAgent(BaseAgent):
         # A routine
         self.intent = None
         self.first_pos = Vector3(0, 0, 0)
+        self.rotation_index = 0
         # Game time
         self.time = 0.0
         # Whether or not GoslingAgent has run its get_ready() function
@@ -43,8 +46,7 @@ class GoslingAgent(BaseAgent):
         field_info = self.get_field_info()
         for i in range(field_info.num_boosts):
             boost = field_info.boost_pads[i]
-            self.boosts.append(boost_object(
-                i, boost.location, boost.is_full_boost))
+            self.boosts.append(boost_object(i, boost.location, boost.is_full_boost))
         self.refresh_player_lists(packet)
         self.ball.update(packet)
         self.ready = True
@@ -300,8 +302,7 @@ class Matrix3:
 
     def dot(self, vector):
         return Vector3(
-            self.forward.dot(vector), self.left.dot(
-                vector), self.up.dot(vector)
+            self.forward.dot(vector), self.left.dot(vector), self.up.dot(vector)
         )
 
 
@@ -461,8 +462,7 @@ class Vector3:
     def angle(self, value):
         # Returns the angle between this Vector3 and another Vector3
         return math.acos(
-            round(self.flatten().normalize().dot(
-                value.flatten().normalize()), 4)
+            round(self.flatten().normalize().dot(value.flatten().normalize()), 4)
         )
 
     def rotate(self, angle):
