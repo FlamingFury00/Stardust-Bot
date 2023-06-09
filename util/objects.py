@@ -1,7 +1,7 @@
 import math
+
 import rlbot.utils.structures.game_data_struct as game_data_struct
 from rlbot.agents.base_agent import BaseAgent, SimpleControllerState
-
 
 # This file holds all of the objects used in gosling utils
 # Includes custom vector and matrix objects
@@ -16,8 +16,6 @@ class GoslingAgent(BaseAgent):
         self.foes = []
         # This holds the carobject for our agent
         self.me = car_object(self.index)
-        self.previous_errors = [0, 0, 0]
-        self.previous_throttle_error = 0
 
         self.ball = ball_object()
         self.game = game_object()
@@ -27,11 +25,7 @@ class GoslingAgent(BaseAgent):
         self.friend_goal = goal_object(self.team)
         self.foe_goal = goal_object(not self.team)
         # A list that acts as the routines stack
-        self.stack = []
-        # A routine
         self.intent = None
-        self.first_pos = Vector3(0, 0, 0)
-        self.rotation_index = 0
         # Game time
         self.time = 0.0
         # Whether or not GoslingAgent has run its get_ready() function
@@ -40,13 +34,21 @@ class GoslingAgent(BaseAgent):
         self.controller = SimpleControllerState()
         # a flag that tells us when kickoff is happening
         self.kickoff_flag = False
+        # text printed at the top left of the screen
+        self.debug_text = ""
+        self.first_pos = Vector3(0, 0, 0)
+        self.last_time = 0
+        self.my_score = 0
+        self.foe_score = 0
+
+        self.rotation_index = 0
 
     def get_ready(self, packet):
         # Preps all of the objects that will be updated during play
         field_info = self.get_field_info()
         for i in range(field_info.num_boosts):
             boost = field_info.boost_pads[i]
-            self.boosts.append(boost_object(i, boost.location, boost.is_full_boost))
+            self.boosts.append(boost_object(i, boost.location))
         self.refresh_player_lists(packet)
         self.ball.update(packet)
         self.ready = True
@@ -73,24 +75,25 @@ class GoslingAgent(BaseAgent):
         # self.stack.append(routine)
         self.set_intent(routine)
 
-    def line(self, start, end, color=None):
-        color = color if color != None else [255, 255, 255]
-        self.renderer.draw_line_3d(
-            start.copy(), end.copy(), self.renderer.create_color(255, *color)
-        )
-
-    def debug_stack(self):
-        # Draws the stack on the screen
-        white = self.renderer.white()
-        for i in range(len(self.stack) - 1, -1, -1):
-            text = self.stack[i].__class__.__name__
-            self.renderer.draw_string_2d(
-                10, 50 + (50 * (len(self.stack) - i)), 3, 3, text, white
-            )
-
-    def clear_intent(self):
+    def pop(self):
         # Shorthand for clearing intent
         self.intent = None
+
+    def line(self, start, end, color=None):
+        color = color if color != None else [255, 255, 255]
+        self.renderer.draw_line_3d(start, end, self.renderer.create_color(255, *color))
+
+    def debug_intent(self):
+        # Draws the stack on the screen
+        white = self.renderer.white()
+
+        if self.intent is not None:
+            text = self.intent().__class__.__name__
+            self.renderer.draw_string_2d(10, 100, 3, 3, text, white)
+
+    def clear(self):
+        # Shorthand for clearing the stack of all routines
+        self.stack = []
 
     def preprocess(self, packet):
         # Calling the update functions for all of the objects
@@ -112,7 +115,7 @@ class GoslingAgent(BaseAgent):
             and packet.game_info.is_round_active
             and packet.game_info.is_kickoff_pause
         ):
-            self.clear_intent()
+            self.pop()
         # Tells us when to go for kickoff
         self.kickoff_flag = (
             packet.game_info.is_round_active and packet.game_info.is_kickoff_pause
@@ -136,6 +139,100 @@ class GoslingAgent(BaseAgent):
         # send our updated controller back to rlbot
         return self.controller
 
+    def print_debug(self):
+        white = self.renderer.white()
+        self.renderer.draw_string_2d(10, 150, 3, 3, self.debug_text, white)
+
+    def add_debug_line(self, name, vec1, vec2, color=[255, 255, 255]):
+        dupes = [line for line in self.debug_lines if line.name == name]
+        if len(dupes) > 0:
+            return
+        self.debug_lines.append(
+            DebugLine(name, vec1, vec2, self.renderer.create_color(255, *color))
+        )
+
+    def remove_debug_line(self, name):
+        self.debug_lines = [line for line in self.debug_lines if line.name != name]
+
+    def clear_debug_lines(self):
+        self.debug_lines = []
+
+    def draw_debug_lines(self):
+        for line in self.debug_lines:
+            self.renderer.draw_line_3d(line.vec1, line.vec2, line.color)
+
+    def is_close_to_ball(self, distance_threshold=600):
+        ball_distance = (self.ball.location - self.me.location).magnitude()
+        return ball_distance < distance_threshold
+
+    def is_close_to_opponent(self, opponent, distance_threshold=600):
+        opponent_distance = (opponent.location - self.me.location).magnitude()
+        return opponent_distance < distance_threshold
+
+    def get_closest_opponent(self):
+        closest_opponent = None
+        closest_distance = float("inf")
+
+        for opponent in self.foes:
+            distance = (opponent.location - self.me.location).magnitude()
+            if distance < closest_distance:
+                closest_distance = distance
+                closest_opponent = opponent
+
+        return closest_opponent
+
+    def get_closest_teammate(self):
+        closest_teammate = None
+        closest_distance = float("inf")
+
+        for mate in self.friends:
+            distance = (mate.location - self.me.location).magnitude()
+            if distance < closest_distance:
+                closest_distance = distance
+                closest_teammate = mate
+
+        return closest_teammate
+
+    def get_best_boost(self):
+        best_boost = None
+        best_score = float("inf")
+        available_boosts = [
+            boost
+            for boost in self.boosts
+            if boost.large
+            and boost.active
+            and (boost.location - self.friend_goal.location).magnitude()
+            < (self.ball.location - self.friend_goal.location).magnitude()
+            and (self.foes[0].location - self.ball.location).magnitude()
+            > (self.me.location - self.ball.location).magnitude()
+            and self.foes[0].location.magnitude() > 500
+        ]
+
+        for boost in available_boosts:
+            boost_to_ball = (self.ball.location - boost.location).normalize()
+            bot_to_boost = (boost.location - self.me.location).normalize()
+            bot_direction = self.me.forward
+
+            distance_to_boost = (boost.location - self.me.location).magnitude()
+            distance_boost_to_ball = (boost.location - self.ball.location).magnitude()
+            angle = bot_direction.angle(bot_to_boost)
+
+            # Assegna un punteggio in base alla distanza e all'angolo
+            score = distance_to_boost + distance_boost_to_ball + angle * 100
+
+            if score < best_score:
+                best_score = score
+                best_boost = boost
+
+        return best_boost
+
+    def is_in_front_of_ball(self):
+        me_to_goal = (self.me.location - self.foe_goal.location).magnitude()
+        ball_to_goal = (self.ball.location - self.foe_goal.location).magnitude()
+        if me_to_goal > 1000 and me_to_goal < ball_to_goal:
+            return True
+        return False
+
     def run(self):
         # override this with your strategy code
         pass
@@ -147,6 +244,7 @@ class car_object:
     def __init__(self, index, packet=None):
         self.location = Vector3(0, 0, 0)
         self.orientation = Matrix3(0, 0, 0)
+        self.angles = Vector3(0, 0, 0)
         self.velocity = Vector3(0, 0, 0)
         self.angular_velocity = [0, 0, 0]
         self.demolished = False
@@ -154,13 +252,15 @@ class car_object:
         self.supersonic = False
         self.jumped = False
         self.doublejumped = False
+        self.team = 0
         self.boost = 0
         self.index = index
-        if packet is not None:
+        if packet != None:
+            self.team = packet.game_cars[self.index].team
             self.update(packet)
 
     def local(self, value):
-        # Shorthand for self.orientation.dot(value)
+        # Shorthand for self.matrix.dot(value)
         return self.orientation.dot(value)
 
     def update(self, packet):
@@ -175,6 +275,11 @@ class car_object:
             car.physics.velocity.y,
             car.physics.velocity.z,
         ]
+        self.angles = Vector3(
+            car.physics.rotation.pitch,
+            car.physics.rotation.yaw,
+            car.physics.rotation.roll,
+        )
         self.orientation = Matrix3(
             car.physics.rotation.pitch,
             car.physics.rotation.yaw,
@@ -234,11 +339,11 @@ class ball_object:
 
 
 class boost_object:
-    def __init__(self, index, location, large):
+    def __init__(self, index, location):
         self.index = index
         self.location = Vector3(location.x, location.y, location.z)
         self.active = True
-        self.large = large
+        self.large = self.location.z > 7
 
     def update(self, packet):
         self.active = packet.game_boosts[self.index].is_active
@@ -250,8 +355,8 @@ class goal_object:
         team = 1 if team == 1 else -1
         self.location = Vector3(0, team * 5100, 320)  # center of goal line
         # Posts are closer to x=750, but this allows the bot to be a little more accurate
-        self.left_post = Vector3(team * 800, team * 5100, 320)
-        self.right_post = Vector3(-team * 800, team * 5100, 320)
+        self.left_post = Vector3(team * 850, team * 5100, 320)
+        self.right_post = Vector3(-team * 850, team * 5100, 320)
 
 
 class game_object:
@@ -275,7 +380,7 @@ class game_object:
 
 
 class Matrix3:
-    # The Matrix3's sole purpose is to convert roll, pitch, and yaw data into an orientation matrix
+    # The Matrix3's sole purpose is to convert roll, pitch, and yaw data from the gametickpaket into an orientation matrix
     # An orientation matrix contains 3 Vector3's
     # Matrix3[0] is the "forward" direction of a given car
     # Matrix3[1] is the "left" direction of a given car
@@ -284,17 +389,18 @@ class Matrix3:
     # you can convert that to local coordinates by dotting it with this matrix
     # ie: local_ball_location = Matrix3.dot(ball.location - car.location)
     def __init__(self, pitch, yaw, roll):
-        cp = math.cos(pitch)
-        sp = math.sin(pitch)
-        cy = math.cos(yaw)
-        sy = math.sin(yaw)
-        cr = math.cos(roll)
-        sr = math.sin(roll)
-        self.data = (
-            Vector3(cp * cy, cp * sy, sp),
-            Vector3(cy * sp * sr - cr * sy, sy * sp * sr + cr * cy, -cp * sr),
-            Vector3(-cr * cy * sp - sr * sy, -cr * sy * sp + sr * cy, cp * cr),
-        )
+        CP = math.cos(pitch)
+        SP = math.sin(pitch)
+        CY = math.cos(yaw)
+        SY = math.sin(yaw)
+        CR = math.cos(roll)
+        SR = math.sin(roll)
+        # List of 3 vectors, each descriping the direction of an axis: Forward, Left, and Up
+        self.data = [
+            Vector3(CP * CY, CP * SY, SP),
+            Vector3(CY * SP * SR - CR * SY, SY * SP * SR + CR * CY, -CP * SR),
+            Vector3(-CR * CY * SP - SR * SY, -CR * SY * SP + SR * CY, CP * CR),
+        ]
         self.forward, self.left, self.up = self.data
 
     def __getitem__(self, key):
@@ -465,6 +571,10 @@ class Vector3:
             round(self.flatten().normalize().dot(value.flatten().normalize()), 4)
         )
 
+    def angle3D(self, value) -> float:
+        # Returns the angle between this Vector3 and another Vector3
+        return math.acos(round(self.normalize().dot(value.normalize()), 4))
+
     def rotate(self, angle):
         # Rotates this Vector3 by the given angle in radians
         # Note that this is only 2D, in the x and y axis
@@ -490,3 +600,11 @@ class Vector3:
         if start.dot(s) < end.dot(s):
             return end
         return start
+
+
+class DebugLine:
+    def __init__(self, name, vec1, vec2, color) -> None:
+        self.name = name
+        self.vec1 = vec1
+        self.vec2 = vec2
+        self.color = color
