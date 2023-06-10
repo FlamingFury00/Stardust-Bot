@@ -891,7 +891,7 @@ class kickoff:
         angle_difference = abs(car_to_ball_angle - car_orientation_angle)
 
         # Check if the car is aligned with the center of the ball
-        is_aligned = angle_difference < 0.4
+        is_aligned = angle_difference < 0.7
 
         corner_kickoff = abs(agent.me.location.x) > 1500
         straight_kickoff = abs(agent.me.location.x) < 100

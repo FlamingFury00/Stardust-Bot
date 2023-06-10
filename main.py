@@ -27,11 +27,17 @@ class Bot(GoslingAgent):
         if self.intent is not None:
             return
 
-        if self.kickoff_flag and is_closest_kickoff(self, self.me):
-            self.set_intent(kickoff(self.me.location.x))
-            return
+        if len(self.friends) > 0:
+            if self.kickoff_flag and is_closest_kickoff(self, self.me):
+                self.set_intent(kickoff(self.me.location.x))
+                return
 
-        if self.kickoff_flag and is_second_closest_kickof(self):
+        if len(self.friends) > 0:
+            if self.kickoff_flag and is_second_closest_kickof(self):
+                return
+
+        if self.kickoff_flag:
+            self.set_intent(kickoff(self.me.location.x))
             return
 
         # if is_ball_going_towards_goal(self) and is_closest(self, self.me):
@@ -39,27 +45,23 @@ class Bot(GoslingAgent):
         #     return
 
         # Rotation and positioning
-        if self.should_rotate():
-            desired_zone = zone_5_positioning(self)
-            if desired_zone is not None:
-                return self.set_intent(goto(desired_zone[0]))
+        if len(self.friends) > 0:
+            if self.should_rotate():
+                desired_zone = zone_5_positioning(self)
+                if desired_zone is not None:
+                    return self.set_intent(goto(desired_zone[0]))
 
         if self.is_in_front_of_ball() and are_no_bots_back(self):
-            return self.set_intent(goto(self.friend_goal.location, self.ball.location))
+            return self.set_intent(
+                goto(self.friend_goal.location, self.foes[0].location)
+            )
 
         # Boost grabbing
         if self.me.boost < 30:
             target_boost = self.get_best_boost()
             if target_boost is not None:
-                self.set_intent(steal_boost(target_boost))
+                self.set_intent(goto_boost(target_boost))
                 return
-
-        # Defence
-        # if is_ball_going_towards_goal(self) and is_second_closest(self):
-        best_save = find_best_save(self, self.get_closest_opponent())
-        if best_save is not None:
-            self.set_intent(best_save)
-            return
 
         # Attack
         if not friends_ahead_of_ball(self) and not friendly_cars_in_front_of_goal(self):
@@ -68,14 +70,21 @@ class Bot(GoslingAgent):
                 self.set_intent(best_shot)
                 return
 
+        # Dribbling
+        if self.me.boost > 30 and self.is_close_to_ball(200):
+            self.set_intent(dribble(self.foe_goal.location))
+            return
+
         # Team play
         if friendly_cars_in_front_of_goal(self) and is_ball_centering(self):
             self.set_intent(center_ball(self.foe_goal.location))
             return
 
-        # Dribbling
-        if self.me.boost > 30 and self.is_close_to_ball(200):
-            self.set_intent(dribble(self.foe_goal.location))
+        # Defence
+        # if is_ball_going_towards_goal(self) and is_second_closest(self):
+        best_save = find_best_save(self, self.get_closest_opponent())
+        if best_save is not None:
+            self.set_intent(best_save)
             return
 
         # Demo and avoid demo

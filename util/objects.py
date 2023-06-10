@@ -88,7 +88,7 @@ class GoslingAgent(BaseAgent):
         white = self.renderer.white()
 
         if self.intent is not None:
-            text = self.intent().__class__.__name__
+            text = self.intent.__class__.__name__
             self.renderer.draw_string_2d(10, 100, 3, 3, text, white)
 
     def clear(self):
@@ -225,6 +225,24 @@ class GoslingAgent(BaseAgent):
                 best_boost = boost
 
         return best_boost
+
+    def get_closest_large_boost(self):
+        available_boosts = [
+            boost
+            for boost in self.boosts
+            if boost.large
+            and boost.active
+            and (boost.location - self.friend_goal.location).magnitude()
+            < (self.ball.location - self.friend_goal.location).magnitude()
+        ]
+        closest_boost = None
+        closest_distance = 10000
+        for boost in available_boosts:
+            distance = (self.me.location - boost.location).magnitude()
+            if closest_boost is None or distance < closest_distance:
+                closest_boost = boost
+                closest_distance = distance
+        return closest_boost
 
     def is_in_front_of_ball(self):
         me_to_goal = (self.me.location - self.foe_goal.location).magnitude()

@@ -470,7 +470,7 @@ def quadratic(a, b, c):
         return -1, -1
 
 
-def shot_valid(agent, shot, threshold=40):
+def shot_valid(agent, shot, threshold=35):
     # Returns True if the ball is still where the shot anticipates it to be
     # First finds the two closest slices in the ball prediction to shot's intercept_time
     # threshold controls the tolerance we allow the ball to be off by
