@@ -47,9 +47,7 @@ class Bot(GoslingAgent):
                     return self.set_intent(goto(desired_zone[0]))
 
             if self.is_in_front_of_ball() and are_no_bots_back(self):
-                return self.set_intent(
-                    goto(self.friend_goal.location, self.ball.location)
-                )
+                return self.set_intent(goto(self.friend_goal.location))
 
             # Boost grabbing
             if self.me.boost < 30:
