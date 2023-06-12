@@ -891,7 +891,7 @@ class kickoff:
         angle_difference = abs(car_to_ball_angle - car_orientation_angle)
 
         # Check if the car is aligned with the center of the ball
-        is_aligned = angle_difference < 0.7
+        is_aligned = angle_difference < 0.3
 
         corner_kickoff = abs(agent.me.location.x) > 1500
         straight_kickoff = abs(agent.me.location.x) < 100
@@ -961,7 +961,7 @@ class recovery:
         if angles_magnitude < 1 and not agent.me.doublejumped:
             agent.pop()
             # Wavedash recovery!
-            agent.push(wavedash())
+            agent.push(wave_dash())
 
         if not agent.me.airborne:
             agent.pop()

@@ -205,7 +205,7 @@ class GoslingAgent(BaseAgent):
             < (self.ball.location - self.friend_goal.location).magnitude()
             and (self.foes[0].location - self.ball.location).magnitude()
             > (self.me.location - self.ball.location).magnitude()
-            and self.foes[0].location.magnitude() > 500
+            and self.foes[0].location.magnitude() > 1000
         ]
 
         for boost in available_boosts:

@@ -956,6 +956,14 @@ def friends_ahead_of_ball(agent):
     return count
 
 
+def friends_attacking(agent):
+    count = 0
+    for car in agent.friends:
+        if car.location.y * side(agent.team) > 0:
+            count += 1
+    return count
+
+
 def is_last_one_back(agent):
     # don't use on defence
     my_y = agent.me.location[1] * side(agent.team)
