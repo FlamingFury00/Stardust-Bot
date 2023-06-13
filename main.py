@@ -102,16 +102,14 @@ class Bot(GoslingAgent):
                 return
 
             # Boost grabbing
-            if self.me.boost < 30:
-                target_boost = self.get_best_boost()
+            if self.me.boost < 30 and is_closest(self, self.me):
+                target_boost = self.get_closest_large_boost()
                 if target_boost is not None:
-                    self.set_intent(goto_boost(target_boost))
+                    self.set_intent(steal_boost(target_boost))
                     return
 
-            if self.is_in_front_of_ball():
-                return self.set_intent(
-                    goto(self.friend_goal.location, self.ball.location)
-                )
+            if self.is_in_front_of_ball() and self.intent is None:
+                return self.set_intent(goto(self.ball.location, self.foes[0].location))
 
             # if (
             #     self.friend_goal.location - self.me.location
@@ -119,11 +117,10 @@ class Bot(GoslingAgent):
             #     self.set_intent(align_in_goal())
             #     return
 
-            # Defence
-            # if is_ball_going_towards_goal(self):
-            best_save = find_best_save(self, self.get_closest_opponent())
-            if best_save is not None:
-                self.set_intent(best_save)
+            # Attack
+            best_shot = find_best_shot(self, self.get_closest_opponent())
+            if best_shot is not None:
+                self.set_intent(best_shot)
                 return
 
             # Dribbling
@@ -131,11 +128,12 @@ class Bot(GoslingAgent):
                 self.set_intent(dribble(self.foe_goal.location))
                 return
 
-            # Attack
-            best_shot = find_best_shot(self, self.get_closest_opponent())
-            if best_shot is not None:
-                self.set_intent(best_shot)
-                return
+            # Defence
+            # if is_ball_going_towards_goal(self):
+            # best_save = find_best_save(self, self.get_closest_opponent())
+            # if best_save is not None:
+            #     self.set_intent(best_save)
+            #     return
 
         # If none of the previous conditions are met, the bot positions itself in our home
         # self.set_intent(goto(self.friend_goal.location))
