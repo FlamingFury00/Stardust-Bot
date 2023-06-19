@@ -170,7 +170,7 @@ class GoslingAgent(BaseAgent):
         return opponent_distance < distance_threshold
 
     def get_closest_opponent(self):
-        closest_opponent = None
+        closest_opponent = self.foes[0]
         closest_distance = float("inf")
 
         for opponent in self.foes:

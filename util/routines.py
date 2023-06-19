@@ -873,6 +873,21 @@ class wall_shot:
                 agent.controller.yaw = self.y if abs(self.y) > 0.3 else 0
 
 
+class kickoff2:
+    # A simple 1v1 kickoff that just drives up behind the ball and dodges
+    # misses the boost on the slight-offcenter kickoffs haha
+    def run(self, agent):
+        target = agent.ball.location + Vector3(0, 200 * side(agent.team), 0)
+        local_target = agent.me.local(target - agent.me.location)
+        defaultPD(agent, local_target)
+        defaultThrottle(agent, 2300)
+        if local_target.magnitude() < 650:
+            # flip towards opponent goal
+            agent.set_intent(
+                flip(agent.me.local(agent.foe_goal.location - agent.me.location))
+            )
+
+
 class kickoff:
     def __init__(self, x):
         self.time_of_kickoff = -1

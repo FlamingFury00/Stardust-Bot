@@ -306,7 +306,8 @@ def find_best_shot(agent, closest_foe):
     shots = find_hits(agent, targets)
     best_score = 0
     ball_to_me = agent.ball.location - agent.me.location
-    best_shot = short_shot(agent.foe_goal.location)
+    # best_shot = short_shot(agent.foe_goal.location)
+    best_shot = None
     if len(shots["goal"]) > 0:
         score = (
             100.3
@@ -345,17 +346,17 @@ def find_best_shot(agent, closest_foe):
         if score > best_score:
             best_score = score
             best_shot = shots["rightfield"][0]
-    if len(shots["anywhere_but_my_net"]) > 0:
-        score = (
-            100
-            - shots["anywhere_but_my_net"][0].intercept_time
-            + agent.time
-            + eta(closest_foe, shots["anywhere_but_my_net"][0].ball_location)[0] / 2
-            - 1
-            + distance_to_wall(shots["anywhere_but_my_net"][0].ball_location) / 1000
-        )
-        if score > best_score:
-            best_shot = shots["anywhere_but_my_net"][0]
+    # if len(shots["anywhere_but_my_net"]) > 0:
+    #     score = (
+    #         100
+    #         - shots["anywhere_but_my_net"][0].intercept_time
+    #         + agent.time
+    #         + eta(closest_foe, shots["anywhere_but_my_net"][0].ball_location)[0] / 2
+    #         - 1
+    #         + distance_to_wall(shots["anywhere_but_my_net"][0].ball_location) / 1000
+    #     )
+    #     if score > best_score:
+    #         best_shot = shots["anywhere_but_my_net"][0]
     return best_shot
 
 
