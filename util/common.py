@@ -385,15 +385,12 @@ def find_rotation(agent, friend):
     my_distance = my_car_to_ball.magnitude()
     friend_distance = friend_car_to_ball.magnitude()
 
-    goal_to_ball, my_ball_distance = (
-        agent.ball.location - agent.friend_goal.location
-    ).normalize(True)
-    goal_to_me, my_goal_distance = (
-        agent.me.location - agent.friend_goal.location
-    ).normalize(True)
-    goal_to_friend, friend_goal_distance = (
-        friend.location - agent.friend_goal.location
-    ).normalize(True)
+    goal_to_ball = (agent.ball.location - agent.friend_goal.location).normalize()
+    my_ball_distance = (agent.ball.location - agent.friend_goal.location).magnitude()
+    goal_to_me = (agent.me.location - agent.friend_goal.location).normalize()
+    my_goal_distance = (agent.me.location - agent.friend_goal.location).magnitude()
+    goal_to_friend = (friend.location - agent.friend_goal.location).normalize()
+    friend_goal_distance = (friend.location - agent.friend_goal.location).magnitude()
 
     me_back = my_goal_distance - 200 < my_ball_distance
     friend_back = friend_goal_distance - 200 < my_ball_distance
@@ -470,7 +467,7 @@ def quadratic(a, b, c):
         return -1, -1
 
 
-def shot_valid(agent, shot, threshold=35):
+def shot_valid(agent, shot, threshold=20):
     # Returns True if the ball is still where the shot anticipates it to be
     # First finds the two closest slices in the ball prediction to shot's intercept_time
     # threshold controls the tolerance we allow the ball to be off by
@@ -957,6 +954,14 @@ def friends_ahead_of_ball(agent):
 
 
 def friends_attacking(agent):
+    count = 0
+    for car in agent.friends:
+        if car.location.y * side(agent.team) < 0:
+            count += 1
+    return count
+
+
+def friends_defending(agent):
     count = 0
     for car in agent.friends:
         if car.location.y * side(agent.team) > 0:

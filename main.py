@@ -46,39 +46,56 @@ class Bot(GoslingAgent):
                 if desired_zone is not None:
                     return self.set_intent(goto(desired_zone[0]))
 
-            if self.is_in_front_of_ball() and are_no_bots_back(self):
-                return self.set_intent(goto(self.friend_goal.location))
+            # if self.is_in_front_of_ball() and are_no_bots_back(self):
+            #     return self.set_intent(goto(self.friend_goal.location))
 
             # Boost grabbing
-            if self.me.boost < 30:
+            if self.me.boost < 30 and friendly_cars_in_front_of_goal(self) >= 1:
                 target_boost = self.get_best_boost()
                 if target_boost is not None:
                     self.set_intent(steal_boost(target_boost))
                     return
 
-            # Defence
-            # if is_ball_going_towards_goal(self) and is_second_closest(self):
-            best_save = find_best_save(self, self.get_closest_opponent())
-            if best_save is not None:
-                self.set_intent(best_save)
-                return
-
-            # Attack
-            if friends_attacking(self) == 0:
-                best_shot = find_best_shot(self, self.get_closest_opponent())
-                if best_shot is not None:
-                    self.set_intent(best_shot)
-                    return
-
             # Team play
-            if friendly_cars_in_front_of_goal(self) and is_ball_centering(self):
-                self.set_intent(center_ball(self.foe_goal.location))
+            if (is_ball_centering(self) and friends_attacking(self) >= 1) or (
+                self.get_closest_teammate().location - self.ball.location
+            ).magnitude() < (self.me.location - self.ball.location).magnitude():
+                self.set_intent(go_centre())
                 return
 
             # Dribbling
             if self.me.boost > 30 and self.is_close_to_ball(200):
                 self.set_intent(dribble(self.foe_goal.location))
                 return
+
+            # Attack
+            if (
+                friends_defending(self) >= 1
+                and (
+                    self.me.location.distance(self.ball.location)
+                    < (
+                        self.get_closest_teammate().location.distance(
+                            self.ball.location
+                        )
+                    )
+                )
+                and self.me.location.y * side(self.team) > 0
+            ):
+                best_shot = find_best_shot(self, self.get_closest_opponent())
+                if best_shot is not None:
+                    self.set_intent(best_shot)
+                    return
+
+            # Defence
+            # if is_ball_going_towards_goal(self) and is_second_closest(self):
+            if self.me.location.distance(self.ball.location) < (
+                self.get_closest_teammate().location.distance(self.ball.location)
+                and self.me.location.y * side(self.team) < 0
+            ):
+                best_save = find_best_save(self, self.get_closest_opponent())
+                if best_save is not None:
+                    self.set_intent(best_save)
+                    return
 
             # Demo and avoid demo
             if self.me.boost > 50:

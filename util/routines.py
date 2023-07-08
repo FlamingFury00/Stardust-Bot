@@ -30,6 +30,110 @@ class atba:
         defaultThrottle(agent, 2300)
 
 
+class go_centre:
+    # Makes bot go inbetween centre of goal and ball
+    # Useful when bot has nothing to do but wants to be in a good position to defend or attack
+    def run(self, agent):
+        relative_target = (
+            Vector3(
+                agent.ball.location.x / 2,
+                (agent.ball.location.y + 5120 * side(agent.team)) / 2,
+                50,
+            )
+            - agent.me.location
+        )
+        local_target = agent.me.local(relative_target)
+        if relative_target.magnitude() > 350:
+            defaultPD(agent, local_target)
+            defaultThrottle(agent, 2300)
+            angles = defaultPD(agent, agent.me.local(relative_target))
+            if abs(angles[1]) > 1.5:
+                agent.controller.handbrake = True
+                agent.controller.boost = False
+            else:
+                agent.pop()
+        else:
+            # If close to target, stop moving and face towards ball
+            defaultThrottle(agent, 0)
+            relative_target = agent.ball.location - agent.me.location
+            angles = defaultPD(agent, agent.me.local(relative_target))
+            if abs(angles[1]) > 2.88 and abs(angles[1]) < 3.4:
+                agent.push(half_flip())
+            else:
+                agent.pop()
+        # Line between car and desired location
+        agent.line(
+            Vector3(
+                agent.ball.location.x / 2,
+                (agent.ball.location.y + 5120 * side(agent.team)) / 2,
+                50,
+            ),
+            agent.me.location,
+            [255, 0, 255],
+        )
+
+
+class goto_friendly_goal:
+    # Drives towards friendly goal. If touching or over goal line stops moving and faces enemy goal
+    def __init__(self):
+        self.step = 10
+
+    def run(self, agent):
+        if (
+            agent.me.location.y > -4800
+            if side(agent.team) == -1
+            else agent.me.location.y < 4800
+        ):
+            relative = Vector3(0, 5120 * side(agent.team), 0) - agent.me.location
+            defaultPD(agent, agent.me.local(relative))
+            angles = defaultPD(agent, agent.me.local(relative))
+            if (
+                agent.me.location.y > -4750
+                if side(agent.team) == -1
+                else agent.me.location.y < 4750
+            ):
+                if abs(angles[1]) > 2.88 and abs(angles[1]) < 3.4:
+                    defaultThrottle(agent, -2300)
+                    self.step = 10
+                else:
+                    defaultThrottle(agent, 2300)
+                    self.step = 0
+        elif self.step == 0:
+            agent.push(half_flip())
+            self.step = 10
+
+
+class half_flip:
+    def __init__(self):
+        # the time the jump began
+        self.time = -1
+        # keeps track of the frames the jump button has been released
+        self.counter = 0
+
+    def run(self, agent):
+        if self.time == -1:
+            elapsed = 0
+            self.time = agent.time
+        else:
+            elapsed = agent.time - self.time
+        if elapsed < 0.15:
+            agent.controller.jump = True
+        elif elapsed >= 0.15 and self.counter < 1:
+            agent.controller.jump = False
+            self.counter += 1
+        elif elapsed < 0.6:
+            agent.controller.jump = True
+            agent.controller.pitch = 1
+        elif elapsed < 1.4:
+            # Rotates and lands
+            agent.controller.pitch = -1
+            agent.controller.roll = 1
+            agent.controller.yaw = 1
+        elif not agent.me.airborne:
+            # Stops routine when landed
+            agent.pop()
+
+
 class aerial:
     def __init__(
         self,
@@ -132,6 +236,9 @@ class aerial:
         delta_x = self.ball_location - xf
         f = delta_x.normalize()
         phi = f.angle3D(agent.me.forward)
+
+        if phi == 0:
+            phi = 1
         turn_time = 0.7 * (2 * math.sqrt(phi / 9))
 
         tau1 = turn_time * cap(1 - 0.3 / phi, 0, 1)

@@ -14,6 +14,7 @@ class GoslingAgent(BaseAgent):
         # A list of cars for both teammates and opponents
         self.friends = []
         self.foes = []
+        self.role = "defender"  # Default role
         # This holds the carobject for our agent
         self.me = car_object(self.index)
 
@@ -182,7 +183,7 @@ class GoslingAgent(BaseAgent):
         return closest_opponent
 
     def get_closest_teammate(self):
-        closest_teammate = None
+        closest_teammate = self.friends[0]
         closest_distance = float("inf")
 
         for mate in self.friends:
