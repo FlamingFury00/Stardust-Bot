@@ -119,11 +119,7 @@ class Bot(GoslingAgent):
                 return
 
             if self.is_in_front_of_ball():
-                self.set_intent(
-                    goto(
-                        self.friend_goal.location, self.get_closest_opponent().location
-                    )
-                )
+                self.set_intent(goto(self.friend_goal.location))
 
             # Boost grabbing
             if (
@@ -133,7 +129,7 @@ class Bot(GoslingAgent):
             ):
                 target_boost = self.get_best_boost()
                 if target_boost is not None:
-                    self.set_intent(steal_boost(target_boost))
+                    self.set_intent(goto_boost(target_boost))
                     return
 
             # if (
