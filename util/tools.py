@@ -18,7 +18,7 @@ def find_hits(agent, targets):
 
     # Begin looking at slices 0.25s into the future
     # The number of slices
-    i = 15
+    i = 10
     while i < struct.num_slices:
         # Gather some data about the slice
         intercept_time = struct.slices[i].game_seconds
@@ -179,7 +179,7 @@ def find_saves(agent, targets):
 
     # Begin looking at slices 0.25s into the future
     # The number of slices
-    i = 15
+    i = 10
     while i < struct.num_slices:
         # Gather some data about the slice
         intercept_time = struct.slices[i].game_seconds
@@ -306,8 +306,8 @@ def find_best_shot(agent, closest_foe):
     shots = find_hits(agent, targets)
     best_score = 0
     ball_to_me = agent.ball.location - agent.me.location
-    # best_shot = short_shot(agent.foe_goal.location)
-    best_shot = None
+    best_shot = short_shot(agent.foe_goal.location)
+    # best_shot = None
     if len(shots["goal"]) > 0:
         score = (
             100.3
@@ -324,28 +324,28 @@ def find_best_shot(agent, closest_foe):
             score = 100 - shots["pass"][0].intercept_time + agent.time
             if score > best_score:
                 best_shot = shots["pass"][0]
-    if len(shots["leftfield"]) > 0:
-        score = (
-            100
-            - shots["leftfield"][0].intercept_time
-            + agent.time
-            + eta(closest_foe, shots["leftfield"][0].ball_location)[0] / 3
-            - eta(agent.me, shots["leftfield"][0].ball_location)[0] / 3
-        )
-        if score > best_score:
-            best_score = score
-            best_shot = shots["leftfield"][0]
-    if len(shots["rightfield"]) > 0:
-        score = (
-            100
-            - shots["rightfield"][0].intercept_time
-            + agent.time
-            + eta(closest_foe, shots["rightfield"][0].ball_location)[0] / 3
-            - eta(agent.me, shots["rightfield"][0].ball_location)[0] / 3
-        )
-        if score > best_score:
-            best_score = score
-            best_shot = shots["rightfield"][0]
+    # if len(shots["leftfield"]) > 0:
+    #     score = (
+    #         100
+    #         - shots["leftfield"][0].intercept_time
+    #         + agent.time
+    #         + eta(closest_foe, shots["leftfield"][0].ball_location)[0] / 3
+    #         - eta(agent.me, shots["leftfield"][0].ball_location)[0] / 3
+    #     )
+    #     if score > best_score:
+    #         best_score = score
+    #         best_shot = shots["leftfield"][0]
+    # if len(shots["rightfield"]) > 0:
+    #     score = (
+    #         100
+    #         - shots["rightfield"][0].intercept_time
+    #         + agent.time
+    #         + eta(closest_foe, shots["rightfield"][0].ball_location)[0] / 3
+    #         - eta(agent.me, shots["rightfield"][0].ball_location)[0] / 3
+    #     )
+    #     if score > best_score:
+    #         best_score = score
+    #         best_shot = shots["rightfield"][0]
     # if len(shots["anywhere_but_my_net"]) > 0:
     #     score = (
     #         100
@@ -373,54 +373,18 @@ def find_best_save(agent, closest_foe):
     right_field = Vector3(
         4200 * side(agent.team), agent.ball.location.y + (1000 * -side(agent.team)), 0
     )
-
-    if len(agent.friends) > 0:
-        targets = {
-            "goal": (agent.foe_goal.left_post, agent.foe_goal.right_post),
-            "leftfield": (left_field, left_mid_field),
-            "rightfield": (right_mid_field, right_field),
-            "anywhere_but_my_net": (
-                agent.friend_goal.right_post,
-                agent.friend_goal.left_post,
-            ),
-            "pass": (agent.get_closest_teammate().location, agent.foe_goal.location),
-        }
-    else:
-        targets = {
-            "goal": (agent.foe_goal.left_post, agent.foe_goal.right_post),
-            "leftfield": (left_field, left_mid_field),
-            "rightfield": (right_mid_field, right_field),
-            "anywhere_but_my_net": (
-                agent.friend_goal.right_post,
-                agent.friend_goal.left_post,
-            ),
-        }
+    targets = {
+        "goal": (agent.foe_goal.left_post, agent.foe_goal.right_post),
+        "leftfield": (left_field, left_mid_field),
+        "rightfield": (right_mid_field, right_field),
+        "anywhere_but_my_net": (
+            agent.friend_goal.right_post,
+            agent.friend_goal.left_post,
+        ),
+    }
     saves = find_saves(agent, targets)
     best_score = 0
     best_shot = save()
-    if len(saves["anywhere_but_my_net"]) > 0:
-        score = (
-            100
-            - saves["anywhere_but_my_net"][0].intercept_time
-            + agent.time
-            + eta(closest_foe, saves["anywhere_but_my_net"][0].ball_location)[0] / 2
-            - 1
-            + distance_to_wall(saves["anywhere_but_my_net"][0].ball_location) / 1000
-        )
-        if score > best_score:
-            best_shot = saves["anywhere_but_my_net"][0]
-    if len(agent.friends) > 0:
-        if len(saves["pass"]) > 0:
-            score = (
-                100
-                - saves["pass"][0].intercept_time
-                + agent.time
-                + eta(closest_foe, saves["pass"][0].ball_location)[0] / 2
-                - 1
-                + distance_to_wall(saves["pass"][0].ball_location) / 1000
-            )
-            if score > best_score:
-                best_shot = saves["pass"][0]
     if len(saves["goal"]) > 0:
         score = (
             100
@@ -433,27 +397,17 @@ def find_best_save(agent, closest_foe):
         if score > best_score:
             best_score = score
             best_shot = saves["goal"][0]
+    if len(saves["anywhere_but_my_net"]) > 0:
+        score = 100 - saves["anywhere_but_my_net"][0].intercept_time + agent.time
+        if score > best_score:
+            best_shot = saves["anywhere_but_my_net"][0]
     if len(saves["leftfield"]) > 0:
-        score = (
-            100
-            - saves["leftfield"][0].intercept_time
-            + agent.time
-            + eta(closest_foe, saves["leftfield"][0].ball_location)[0] / 2
-            - 1
-            + distance_to_wall(saves["leftfield"][0].ball_location) / 1000
-        )
+        score = 100 - saves["leftfield"][0].intercept_time + agent.time
         if score > best_score:
             best_score = score
             best_shot = saves["leftfield"][0]
     if len(saves["rightfield"]) > 0:
-        score = (
-            100
-            - saves["rightfield"][0].intercept_time
-            + agent.time
-            + eta(closest_foe, saves["rightfield"][0].ball_location)[0] / 2
-            - 1
-            + distance_to_wall(saves["rightfield"][0].ball_location) / 1000
-        )
+        score = 100 - saves["rightfield"][0].intercept_time + agent.time
         if score > best_score:
             best_score = score
             best_shot = saves["rightfield"][0]

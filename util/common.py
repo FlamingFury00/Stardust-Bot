@@ -467,7 +467,7 @@ def quadratic(a, b, c):
         return -1, -1
 
 
-def shot_valid(agent, shot, threshold=20):
+def shot_valid(agent, shot, threshold=35):
     # Returns True if the ball is still where the shot anticipates it to be
     # First finds the two closest slices in the ball prediction to shot's intercept_time
     # threshold controls the tolerance we allow the ball to be off by
@@ -967,6 +967,18 @@ def friends_defending(agent):
         if car.location.y * side(agent.team) > 0:
             count += 1
     return count
+
+
+def should_attack(agent):
+    if agent.ball.location.y * side(agent.team) <= 0:
+        return True
+    return False
+
+
+def should_defend(agent):
+    if agent.ball.location.y * side(agent.team) > 0:
+        return True
+    return False
 
 
 def is_last_one_back(agent):
