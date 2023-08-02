@@ -52,7 +52,7 @@ class Bot(GoslingAgent):
                 )
 
             # Boost grabbing
-            if self.me.boost < 30:
+            if self.me.boost < 30 and is_second_closest(self):
                 target_boost = self.get_best_boost()
                 if target_boost is not None:
                     self.set_intent(steal_boost(target_boost))
