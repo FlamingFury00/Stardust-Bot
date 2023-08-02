@@ -5,7 +5,7 @@ This repository is related to [RLBot](http://www.rlbot.org/), a framework for ru
 - Download this repository
 - Open RLBotGUI
 - Click "Add" top-left
-- Click "Load Folder" and select the folder where this repository is.
+- Click "Load Folder" and select the repository folder.
 
 ---
 
