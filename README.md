@@ -3,7 +3,7 @@
 This repository is related to [RLBot](http://www.rlbot.org/), a framework for running offline Rocket League bots. You can try Stardust by downloading RLBotGUI, then:
 
 - Download this repository
-- Open RlBotGUI
+- Open RLBotGUI
 - Click "Add" top-left
 - Click "Load Folder" and select the folder where this repository is.
 
