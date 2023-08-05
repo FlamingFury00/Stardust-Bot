@@ -66,9 +66,9 @@ class Bot(GoslingAgent):
                     return
 
             # Dribbling
-            if self.me.boost > 30 and self.is_close_to_ball(200):
-                self.set_intent(dribble(self.foe_goal.location))
-                return
+            # if self.me.boost > 30 and self.is_close_to_ball(200):
+            #     self.set_intent(dribble(self.foe_goal.location))
+            #     return
 
             # Team play
             if friendly_cars_in_front_of_goal(self) and is_ball_centering(self):
@@ -103,6 +103,12 @@ class Bot(GoslingAgent):
                 self.set_intent(kickoff(self.me.location.x))
                 return
 
+            # Rotation and positioning
+            if self.should_rotate():
+                desired_zone = zone_5_positioning(self)
+                if desired_zone is not None:
+                    return self.set_intent(goto(desired_zone[0]))
+
             if self.is_in_front_of_ball():
                 self.set_intent(goto(self.friend_goal.location))
 
@@ -124,9 +130,9 @@ class Bot(GoslingAgent):
             #     return
 
             # Dribbling
-            if self.me.boost > 30 and self.is_close_to_ball(200):
-                self.set_intent(dribble(self.foe_goal.location))
-                return
+            # if self.me.boost > 30 and self.is_close_to_ball(200):
+            #     self.set_intent(dribble(self.foe_goal.location))
+            #     return
 
             # Attack
             if should_attack(self):
