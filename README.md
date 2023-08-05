@@ -1,3 +1,14 @@
+# RLBOT
+
+This repository is related to [RLBot](http://www.rlbot.org/), a framework for running offline Rocket League bots. You can try Stardust by downloading RLBotGUI, then:
+
+- Download this repository
+- Open RLBotGUI
+- Click "Add" top-left
+- Click "Load Folder" and select the repository folder.
+
+---
+
 # Stardust - A Rocket League Bot
 
 Initially started as a project to learn Python through the SkillQuest course, now i am developing further more on my own to partecipate in the RlBot Championship and other Tournaments.
