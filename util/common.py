@@ -467,7 +467,7 @@ def quadratic(a, b, c):
         return -1, -1
 
 
-def shot_valid(agent, shot, threshold=30):
+def shot_valid(agent, shot, threshold=35):
     # Returns True if the ball is still where the shot anticipates it to be
     # First finds the two closest slices in the ball prediction to shot's intercept_time
     # threshold controls the tolerance we allow the ball to be off by
@@ -946,8 +946,8 @@ def demo_rotation(agent):
 def friends_ahead_of_ball(agent):
     count = 0
     for car in agent.friends:
-        if (car.location[1] > agent.ball.location[1] + 500 and agent.team == 0) or (
-            car.location[1] < agent.ball.location[1] - 500 and agent.team == 1
+        if (car.location[1] > agent.ball.location[1] + 1500 and agent.team == 0) or (
+            car.location[1] < agent.ball.location[1] - 1500 and agent.team == 1
         ):
             count += 1
     return count

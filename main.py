@@ -58,6 +58,15 @@ class Bot(GoslingAgent):
                     self.set_intent(steal_boost(target_boost))
                     return
 
+            # if (
+            #     should_attack(self)
+            #     and friends_attacking(self) >= 1
+            #     and self.get_closest_teammate().location.distance(self.ball.location)
+            #     < self.me.location.distance(self.ball.location)
+            #     and not friends_ahead_of_ball(self)
+            # ):
+            #     return self.set_intent(go_centre())
+
             # Attack
             if should_attack(self):
                 best_shot = find_best_shot(self, self.get_closest_opponent())

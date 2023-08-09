@@ -179,7 +179,7 @@ def find_saves(agent, targets):
 
     # Begin looking at slices 0.25s into the future
     # The number of slices
-    i = 10
+    i = 12
     while i < struct.num_slices:
         # Gather some data about the slice
         intercept_time = struct.slices[i].game_seconds
@@ -233,7 +233,7 @@ def find_saves(agent, targets):
                                 if (
                                     600 > ball_location[2] > 300
                                     and slope > 1.0
-                                    and (ball_location[2] - 250) * 0.14 > agent.me.boost
+                                    and (ball_location[2] - 250) * 0.30 > agent.me.boost
                                 ):
                                     hits[pair].append(
                                         aerial_shot(
@@ -243,7 +243,7 @@ def find_saves(agent, targets):
                                             slope,
                                         )
                                     )
-                                if ball_location[2] > 500 and agent.me.boost >= 50:
+                                if ball_location[2] > 500:
                                     aerial_attempt = aerial(
                                         ball_location - 120 * best_shot_vector,
                                         intercept_time,
@@ -397,12 +397,11 @@ def find_best_save(agent, closest_foe):
     saves = find_saves(agent, targets)
     best_score = 0
     best_shot = save()
-    if len(agent.friends) > 0:
-        if len(saves["pass"]) > 0:
-            score = 100 - saves["pass"][0].intercept_time + agent.time
-            if score > best_score:
-                best_score = score
-                best_shot = saves["pass"][0]
+    # if len(agent.friends) > 0:
+    #     if len(saves["pass"]) > 0:
+    #         score = 100 - saves["pass"][0].intercept_time + agent.time
+    #         if score > best_score:
+    #             best_shot = saves["pass"][0]
     if len(saves["goal"]) > 0:
         score = (
             100
