@@ -59,7 +59,7 @@ class Bot(GoslingAgent):
                     return
 
             # Attack
-            if should_attack(self) and friends_attacking(self) < 1:
+            if should_attack(self):
                 best_shot = find_best_shot(self, self.get_closest_opponent())
                 if best_shot is not None:
                     self.set_intent(best_shot)

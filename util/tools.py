@@ -18,7 +18,7 @@ def find_hits(agent, targets):
 
     # Begin looking at slices 0.25s into the future
     # The number of slices
-    i = 10
+    i = 13
     while i < struct.num_slices:
         # Gather some data about the slice
         intercept_time = struct.slices[i].game_seconds
@@ -243,7 +243,7 @@ def find_saves(agent, targets):
                                             slope,
                                         )
                                     )
-                                if ball_location[2] > 600:
+                                if ball_location[2] > 500 and agent.me.boost >= 50:
                                     aerial_attempt = aerial(
                                         ball_location - 120 * best_shot_vector,
                                         intercept_time,
@@ -373,18 +373,36 @@ def find_best_save(agent, closest_foe):
     right_field = Vector3(
         4200 * side(agent.team), agent.ball.location.y + (1000 * -side(agent.team)), 0
     )
-    targets = {
-        "goal": (agent.foe_goal.left_post, agent.foe_goal.right_post),
-        "leftfield": (left_field, left_mid_field),
-        "rightfield": (right_mid_field, right_field),
-        "anywhere_but_my_net": (
-            agent.friend_goal.right_post,
-            agent.friend_goal.left_post,
-        ),
-    }
+    if len(agent.friends) > 0:
+        targets = {
+            "goal": (agent.foe_goal.left_post, agent.foe_goal.right_post),
+            "leftfield": (left_field, left_mid_field),
+            "rightfield": (right_mid_field, right_field),
+            "anywhere_but_my_net": (
+                agent.friend_goal.right_post,
+                agent.friend_goal.left_post,
+            ),
+            "pass": (agent.get_closest_teammate().location, agent.foe_goal.location),
+        }
+    else:
+        targets = {
+            "goal": (agent.foe_goal.left_post, agent.foe_goal.right_post),
+            "leftfield": (left_field, left_mid_field),
+            "rightfield": (right_mid_field, right_field),
+            "anywhere_but_my_net": (
+                agent.friend_goal.right_post,
+                agent.friend_goal.left_post,
+            ),
+        }
     saves = find_saves(agent, targets)
     best_score = 0
     best_shot = save()
+    if len(agent.friends) > 0:
+        if len(saves["pass"]) > 0:
+            score = 100 - saves["pass"][0].intercept_time + agent.time
+            if score > best_score:
+                best_score = score
+                best_shot = saves["pass"][0]
     if len(saves["goal"]) > 0:
         score = (
             100

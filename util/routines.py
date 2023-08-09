@@ -271,7 +271,7 @@ class aerial_shot:
         # The point we hit the ball at
         self.intercept = self.ball_location - (self.shot_vector * 100)
         # dictates when (how late) we jump, much later than in jump_shot because we can take advantage of a double jump
-        self.jump_threshold = 600
+        self.jump_threshold = 584
         # what time we began our jump at
         self.jump_time = 0
         # If we need a second jump we have to let go of the jump button for 3 frames, this counts how many frames we have let go for
@@ -492,7 +492,7 @@ class goto:
         )
 
         velocity = 1 + agent.me.velocity.magnitude()
-        if distance_remaining < 350:
+        if distance_remaining < 500:
             agent.pop()
         elif (
             abs(angles[1]) < 0.05
@@ -664,7 +664,7 @@ class jump_shot:
         # controls how soon car will jump based on acceleration required. max 584
         # bigger = later, which allows more time to align with shot vector
         # smaller = sooner
-        self.jump_threshold = 400
+        self.jump_threshold = 384
         # Flags for what part of the routine we are in
         self.jumping = False
         self.dodging = False
@@ -843,7 +843,7 @@ class wall_shot:
         # controls how soon car will jump based on acceleration required. max 584
         # bigger = later, which allows more time to align with shot vector
         # smaller = sooner
-        self.jump_threshold = 400
+        self.jump_threshold = 384
         # Flags for what part of the routine we are in
         self.jumping = False
         self.dodging = False
@@ -1137,7 +1137,7 @@ class pop_up:
         # controls how soon car will jump based on acceleration required. max 584
         # bigger = later, which allows more time to align with shot vector
         # smaller = sooner
-        self.jump_threshold = 400
+        self.jump_threshold = 384
         # Flags for what part of the routine we are in
         self.jumping = False
         self.dodging = False
