@@ -67,6 +67,24 @@ class Bot(GoslingAgent):
             # ):
             #     return self.set_intent(go_centre())
 
+            if (
+                should_attack(self)
+                and not friends_ahead_of_ball(self)
+                and friends_attacking(self) >= 1
+                and (self.ball.latest_touched_team != self.me.team)
+                and self.me.boost >= 30
+            ):
+                self.set_intent(demo(self.get_opponent_closest_to_ball()))
+                return
+
+            if (
+                should_attack(self)
+                and not friends_ahead_of_ball(self)
+                and friends_attacking(self) >= 1
+                and (self.ball.latest_touched_team != self.me.team)
+            ):
+                return self.set_intent(go_centre())
+
             # Attack
             if should_attack(self):
                 best_shot = find_best_shot(self, self.get_closest_opponent())

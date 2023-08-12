@@ -182,6 +182,18 @@ class GoslingAgent(BaseAgent):
 
         return closest_opponent
 
+    def get_opponent_closest_to_ball(self):
+        closest_opponent = self.foes[0]
+        closest_distance = float("inf")
+
+        for opponent in self.foes:
+            distance = (opponent.location - self.ball.location).magnitude()
+            if distance < closest_distance:
+                closest_distance = distance
+                closest_opponent = opponent
+
+        return closest_opponent
+
     def get_closest_teammate(self):
         closest_teammate = self.friends[0]
         closest_distance = float("inf")

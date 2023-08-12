@@ -39,9 +39,9 @@ def defaultPD(agent, local_target, direction=1.0):
     ]  # angle required to roll upright
     # Once we have the angles we need to rotate, we feed them into PD loops to determing the controller inputs
     agent.controller.steer = steerPD(target_angles[1], 0) * direction
-    agent.controller.pitch = steerPD(target_angles[0], agent.me.angular_velocity[1] / 6)
-    agent.controller.yaw = steerPD(target_angles[1], -agent.me.angular_velocity[2] / 8)
-    agent.controller.roll = steerPD(target_angles[2], agent.me.angular_velocity[0] / 3)
+    agent.controller.pitch = steerPD(target_angles[0], agent.me.angular_velocity[1] / 4)
+    agent.controller.yaw = steerPD(target_angles[1], -agent.me.angular_velocity[2] / 4)
+    agent.controller.roll = steerPD(target_angles[2], agent.me.angular_velocity[0] / 2)
     # Returns the angles, which can be useful for other purposes
     return target_angles
 
@@ -467,7 +467,7 @@ def quadratic(a, b, c):
         return -1, -1
 
 
-def shot_valid(agent, shot, threshold=35):
+def shot_valid(agent, shot, threshold=40):
     # Returns True if the ball is still where the shot anticipates it to be
     # First finds the two closest slices in the ball prediction to shot's intercept_time
     # threshold controls the tolerance we allow the ball to be off by
