@@ -179,7 +179,7 @@ def find_saves(agent, targets):
 
     # Begin looking at slices 0.25s into the future
     # The number of slices
-    i = 15
+    i = 10
     while i < struct.num_slices:
         # Gather some data about the slice
         intercept_time = struct.slices[i].game_seconds

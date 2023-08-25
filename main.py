@@ -77,13 +77,19 @@ class Bot(GoslingAgent):
                 self.set_intent(demo(self.get_opponent_closest_to_ball()))
                 return
 
+            demo_intent = detect_demo(self)
+            if demo_intent[1] is not None:
+                self.set_intent(avoid_demo(self.get_closest_opponent()))
+                return
+
             if (
                 should_attack(self)
                 and not friends_ahead_of_ball(self)
                 and friends_attacking(self) >= 1
                 and (self.ball.latest_touched_team != self.me.team)
             ):
-                return self.set_intent(go_centre())
+                self.set_intent(go_centre())
+                return
 
             # Attack
             if should_attack(self):
@@ -93,9 +99,9 @@ class Bot(GoslingAgent):
                     return
 
             # Dribbling
-            # if self.me.boost > 30 and self.is_close_to_ball(200):
-            #     self.set_intent(dribble(self.foe_goal.location))
-            #     return
+            if self.me.boost > 30 and self.is_close_to_ball(200):
+                self.set_intent(dribble(self.foe_goal.location))
+                return
 
             # Team play
             if friendly_cars_in_front_of_goal(self) and is_ball_centering(self):
@@ -110,17 +116,17 @@ class Bot(GoslingAgent):
                 return
 
             # Demo and avoid demo
-            if self.me.boost > 50:
-                closest_opponent = self.get_closest_opponent()
-                if closest_opponent is not None and self.is_close_to_opponent(
-                    closest_opponent
-                ):
-                    self.set_intent(demo(closest_opponent))
-                    return
-                # else:
-                #     demo_intent = detect_demo(self)
-                #     if demo_intent is not None:
-                #         self.set_intent(avoid_demo(self.me))
+            # if self.me.boost > 50:
+            #     closest_opponent = self.get_closest_opponent()
+            #     if closest_opponent is not None and self.is_close_to_opponent(
+            #         closest_opponent
+            #     ):
+            #         self.set_intent(demo(closest_opponent))
+            #         return
+            # else:
+            #     demo_intent = detect_demo(self)
+            #     if demo_intent[1] is not None and not demo_intent[0]:
+            #         self.set_intent(avoid_demo(self.get_closest_opponent()))
 
             if are_no_bots_back(self) and is_second_closest(self):
                 return self.set_intent(goto(self.friend_goal.location))

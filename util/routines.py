@@ -36,8 +36,8 @@ class go_centre:
     def run(self, agent):
         relative_target = (
             Vector3(
-                agent.ball.location.x / 2,
-                (agent.ball.location.y + 5120 * side(agent.team)) / 2,
+                agent.ball.location.x / 3,
+                (agent.ball.location.y + 5120 * side(agent.team)) / 3,
                 50,
             )
             - agent.me.location
@@ -216,7 +216,7 @@ class aerial:
             agent.controller.boost = 0
             agent.controller.throttle = 0
 
-        if T <= 0 or not shot_valid(agent, self, threshold=150):
+        if T <= 0 or not shot_valid(agent, self, threshold=90):
             agent.pop()
             agent.push(recovery())
 
