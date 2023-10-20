@@ -17,9 +17,9 @@ Welcome to the repository dedicated to [**RLBot**](http://www.rlbot.org/), a fra
 
 ---
 
-![Stardust Logo](./stardust.png)
-
 <div align="center">
+
+<img src="./stardust.png" alt="Stardust Logo" width="500"/>
 
 # :star2: Stardust: A Decent Rocket League Bot :star2:
 
