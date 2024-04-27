@@ -1,6 +1,6 @@
 import math
 
-from util.objects import Vector3, Matrix3
+from util.objects import Matrix3, Vector3
 
 # This file is for small utilities for math and movement
 
@@ -135,9 +135,7 @@ def car_ball_collision_offset(car, shot_vector, time_to_jump):
 
 def predict_car_location(car, time, gravity=650):
     # Finds the cars location after a certain amount of time
-    return (
-        car.location + car.velocity * time + 0.5 * Vector3(0, 0, -gravity) * time**2
-    )
+    return car.location + car.velocity * time + 0.5 * Vector3(0, 0, -gravity) * time**2
 
 
 def find_turn_radius(speed):
@@ -277,7 +275,7 @@ def eta(car, ball_location):
 
 
 def eta2(car, target=None, direction=None, distance=None):
-    if direction != None and distance != None:
+    if direction is not None and distance is not None:
         forward_angle = direction.angle(car.forward) * cap(distance - 500, 0, 500) / 500
         car_to_target = target - car.location
         int_vel = cap(car.velocity.magnitude(), 1410, 2300)
@@ -385,11 +383,8 @@ def find_rotation(agent, friend):
     my_distance = my_car_to_ball.magnitude()
     friend_distance = friend_car_to_ball.magnitude()
 
-    goal_to_ball = (agent.ball.location - agent.friend_goal.location).normalize()
     my_ball_distance = (agent.ball.location - agent.friend_goal.location).magnitude()
-    goal_to_me = (agent.me.location - agent.friend_goal.location).normalize()
     my_goal_distance = (agent.me.location - agent.friend_goal.location).magnitude()
-    goal_to_friend = (friend.location - agent.friend_goal.location).normalize()
     friend_goal_distance = (friend.location - agent.friend_goal.location).magnitude()
 
     me_back = my_goal_distance - 200 < my_ball_distance

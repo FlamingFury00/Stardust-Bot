@@ -1,4 +1,25 @@
-from util.routines import *
+import math
+
+from util.common import (
+    cap,
+    distance_to_wall,
+    eta,
+    find_slope,
+    in_field,
+    is_on_wall,
+    post_correction,
+    side,
+)
+from util.objects import Vector3
+from util.routines import (
+    aerial,
+    aerial_shot,
+    jump_shot,
+    pop_up,
+    save,
+    short_shot,
+    wall_shot,
+)
 
 # This file is for strategic tools
 
@@ -197,7 +218,6 @@ def find_saves(agent, targets):
             car_to_ball = (ball_location - agent.me.location).flatten()
             # Adding a True to a vector's normalize will have it also return the magnitude of the vector
             direction = car_to_ball.normalize()
-            distance = car_to_ball.magnitude()
 
             time_of_arrival, forwards = eta(agent.me, ball_location)
 
@@ -305,7 +325,6 @@ def find_best_shot(agent, closest_foe):
         }
     shots = find_hits(agent, targets)
     best_score = 0
-    ball_to_me = agent.ball.location - agent.me.location
     best_shot = short_shot(agent.foe_goal.location)
     # best_shot = None
     if len(shots["goal"]) > 0:

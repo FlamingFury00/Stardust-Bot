@@ -1,7 +1,25 @@
 import math
-from math import atan2, pi
+from math import atan2
 
-from util.common import *
+from util.common import (
+    are_no_bots_back,
+    backsolve,
+    cap,
+    defaultPD,
+    defaultThrottle,
+    demo_rotation,
+    distance_to_wall,
+    friends_ahead_of_ball,
+    in_goal_area,
+    is_on_wall,
+    on_wall,
+    opponent_car_by_index,
+    shot_valid,
+    side,
+    sign,
+    steerPD,
+)
+from util.objects import Vector3
 
 # This file holds all of the mechanical tasks, called "routines", that the bot can do
 
@@ -466,7 +484,7 @@ class goto:
             [255, 0, 255],
         )
 
-        if self.vector != None:
+        if self.vector is not None:
             # See commends for adjustment in jump_shot or aerial for explanation
             side_of_vector = sign(self.vector.cross((0, 0, 1)).dot(car_to_target))
             car_to_target_perp = car_to_target.cross((0, 0, side_of_vector)).normalize()
@@ -529,7 +547,7 @@ class goto_boost:
             [0, 255, 0],
         )
 
-        if self.target != None:
+        if self.target is not None:
             vector = (self.target - self.boost.location).normalize()
             side_of_vector = sign(vector.cross((0, 0, 1)).dot(car_to_boost))
             car_to_boost_perp = car_to_boost.cross((0, 0, side_of_vector)).normalize()
@@ -550,10 +568,8 @@ class goto_boost:
                 final_target[1] = (5000 + distance_to_wall(agent.me.location)) * sign(
                     final_target[1]
                 )
-            car_to_target = (self.target - agent.me.location).magnitude()
         else:
             adjustment = 9999
-            car_to_target = 0
             final_target = self.boost.location
 
         # Some adjustment to the final target to ensure it's inside the field and we don't try to dirve through any goalposts to reach it
@@ -572,7 +588,7 @@ class goto_boost:
 
         velocity = 1 + agent.me.velocity.magnitude()
         if (
-            self.boost.active == False
+            self.boost.active is False
             or agent.me.boost >= 99.0
             or distance_remaining < 350
             or agent.rotation_index == 0
@@ -606,7 +622,7 @@ class goto_pad:
             [0, 255, 0],
         )
 
-        if self.target != None:
+        if self.target is not None:
             vector = (self.target - self.boost.location).normalize()
             side_of_vector = sign(vector.cross((0, 0, 1)).dot(car_to_boost))
             car_to_boost_perp = car_to_boost.cross((0, 0, side_of_vector)).normalize()
@@ -630,7 +646,7 @@ class goto_pad:
         )
 
         if (
-            self.boost.active == False
+            self.boost.active is False
             or agent.me.boost >= 99.0
             or distance_remaining < 800
             or distance_remaining > 1200
@@ -853,7 +869,6 @@ class wall_shot:
         raw_time_remaining = self.intercept_time - agent.time
         # Capping raw_time_remaining above 0 to prevent division problems
         time_remaining = cap(raw_time_remaining, 0.001, 10.0)
-        car_to_ball = self.ball_location - agent.me.location
         # whether we are to the left or right of the shot vector
         side_of_shot = sign(self.ball_location[0])
 
@@ -1016,7 +1031,6 @@ class kickoff:
         is_aligned = angle_difference < 0.5
 
         corner_kickoff = abs(agent.me.location.x) > 1500
-        straight_kickoff = abs(agent.me.location.x) < 100
         team = -side(agent.team)
 
         steer = self.side * team if corner_kickoff else -self.side * team
@@ -1069,7 +1083,7 @@ class recovery:
         self.boosting = boosting
 
     def run(self, agent):
-        if self.target != None:
+        if self.target is not None:
             local_target = agent.me.local((self.target - agent.me.location).flatten())
         else:
             local_target = agent.me.local(agent.me.velocity.flatten())
@@ -1159,7 +1173,6 @@ class pop_up:
         acceleration_required = backsolve(
             self.ball_location, agent.me, time_remaining, 0 if not self.jumping else 650
         )
-        local_acceleration_required = agent.me.local(acceleration_required)
 
         # The adjustment causes the car to circle around the dodge point in an effort to line up with the shot vector
 
@@ -1444,8 +1457,6 @@ class align_in_goal:
         relative_target = agent.ball.location - agent.me.location
         distance = me_to_goal.magnitude()
 
-        ball_distance = (agent.friend_goal.location - agent.ball.location).magnitude()
-
         agent.line(
             ideal_position - Vector3(0, 0, 100),
             ideal_position + Vector3(0, 0, 100),
@@ -1586,7 +1597,7 @@ class steal_boost:
                 [0, 255, 0],
             )
 
-            if self.target != None:
+            if self.target is not None:
                 vector = (self.target - self.boost.location).normalize()
                 side_of_vector = sign(vector.cross((0, 0, 1)).dot(car_to_boost))
                 car_to_boost_perp = car_to_boost.cross(
@@ -1634,7 +1645,7 @@ class steal_boost:
                 self.attempted_demo = True
 
             elif (
-                self.boost.active == False
+                self.boost.active is False
                 or agent.me.boost >= 99.0
                 or distance_remaining < 350
             ):
@@ -1726,7 +1737,7 @@ class goto_kickoff:
             [255, 0, 255],
         )
 
-        if self.vector != None:
+        if self.vector is not None:
             # See commends for adjustment in jump_shot or aerial for explanation
             side_of_vector = sign(self.vector.cross((0, 0, 1)).dot(car_to_target))
             car_to_target_perp = car_to_target.cross((0, 0, side_of_vector)).normalize()
@@ -1954,7 +1965,6 @@ class diagonal_kickoff:
                 agent.push(goto_kickoff(self.target1))
                 self.step += 1
             elif self.step == 2:
-                local_target1 = agent.me.local(self.target2 - agent.me.location)
                 agent.push(
                     diag_flip(Vector3(1, -2 * side(agent.team) * side(self.side), 0))
                 )

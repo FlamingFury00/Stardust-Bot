@@ -81,7 +81,7 @@ class GoslingAgent(BaseAgent):
         self.intent = None
 
     def line(self, start, end, color=None):
-        color = color if color != None else [255, 255, 255]
+        color = color if color is not None else [255, 255, 255]
         self.renderer.draw_line_3d(start, end, self.renderer.create_color(255, *color))
 
     def debug_intent(self):
@@ -112,7 +112,7 @@ class GoslingAgent(BaseAgent):
         self.time = packet.game_info.seconds_elapsed
         # When a new kickoff begins we empty the stack
         if (
-            self.kickoff_flag == False
+            self.kickoff_flag is False
             and packet.game_info.is_round_active
             and packet.game_info.is_kickoff_pause
         ):
@@ -222,7 +222,6 @@ class GoslingAgent(BaseAgent):
         ]
 
         for boost in available_boosts:
-            boost_to_ball = (self.ball.location - boost.location).normalize()
             bot_to_boost = (boost.location - self.me.location).normalize()
             bot_direction = self.me.forward
 
@@ -286,7 +285,7 @@ class car_object:
         self.team = 0
         self.boost = 0
         self.index = index
-        if packet != None:
+        if packet is not None:
             self.team = packet.game_cars[self.index].team
             self.update(packet)
 

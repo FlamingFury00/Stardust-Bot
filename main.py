@@ -1,8 +1,35 @@
-from math import acos, pi
-
-from util.objects import *
-from util.routines import *
-from util.tools import *
+from util.common import (
+    are_no_bots_back,
+    demo_rotation,
+    detect_demo,
+    friendly_cars_in_front_of_goal,
+    friends_ahead_of_ball,
+    friends_attacking,
+    in_goal_area,
+    is_ahead_of_ball,
+    is_ball_centering,
+    is_closest,
+    is_closest_kickoff,
+    is_last_one_back,
+    is_second_closest,
+    is_second_closest_kickof,
+    should_attack,
+    should_defend,
+    zone_5_positioning,
+)
+from util.objects import GoslingAgent
+from util.routines import (
+    avoid_demo,
+    center_ball,
+    demo,
+    dribble,
+    go_centre,
+    goto,
+    kickoff,
+    kickoff2,
+    steal_boost,
+)
+from util.tools import find_best_save, find_best_shot
 
 
 class Bot(GoslingAgent):
@@ -22,8 +49,6 @@ class Bot(GoslingAgent):
         return True
 
     def run(self):
-        ball_to_me = self.me.location - self.ball.location
-
         if self.intent is not None:
             return
 
@@ -133,7 +158,7 @@ class Bot(GoslingAgent):
         # Alone
         else:
             if self.kickoff_flag:
-                self.set_intent(kickoff(self.me.location.x))
+                self.set_intent(kickoff2())
                 return
 
             # Rotation and positioning
