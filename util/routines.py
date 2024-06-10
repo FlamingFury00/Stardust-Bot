@@ -511,7 +511,7 @@ class goto:
 
         velocity = 1 + agent.me.velocity.magnitude()
         if distance_remaining < 500:
-            agent.pop()
+            agent.push(flip(local_target))
         elif (
             abs(angles[1]) < 0.05
             and velocity > 600
