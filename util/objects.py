@@ -44,6 +44,14 @@ class GoslingAgent(BaseAgent):
 
         self.rotation_index = 0
 
+        self.LT = 0
+        self.RLT = 0
+        self.FTR = True
+        self.ST = 0
+        self.DT = 0
+        self.CT = 0
+        self.FPS = 120
+
     def get_ready(self, packet):
         # Preps all of the objects that will be updated during play
         field_info = self.get_field_info()
@@ -122,6 +130,26 @@ class GoslingAgent(BaseAgent):
             packet.game_info.is_round_active and packet.game_info.is_kickoff_pause
         )
 
+    def TimeManager(self):
+        if not self.LT:
+            self.LT = self.time
+        else:
+            if self.RLT == self.time:
+                return
+
+            if int(self.LT) != int(self.time):
+                if self.FTR or self.kickoff_flag:
+                    self.FTR = False
+                self.ST = self.DT = 0
+
+            Tp = round(max(1, (self.time - self.LT) * self.FPS))
+            self.LT = min(self.time, self.LT + Tp)
+            self.RLT = self.time
+            self.CT += Tp
+            if Tp > 1:
+                self.ST += Tp - 1
+            self.DT += 1
+
     def get_output(self, packet):
         # Reset controller
         self.controller.__init__()
@@ -129,6 +157,8 @@ class GoslingAgent(BaseAgent):
         if not self.ready:
             self.get_ready(packet)
         self.preprocess(packet)
+
+        self.TimeManager()
 
         self.renderer.begin_rendering()
         # Run our strategy code
@@ -259,7 +289,7 @@ class GoslingAgent(BaseAgent):
     def is_in_front_of_ball(self):
         me_to_goal = (self.me.location - self.foe_goal.location).magnitude()
         ball_to_goal = (self.ball.location - self.foe_goal.location).magnitude()
-        if me_to_goal > 1000 and me_to_goal < ball_to_goal:
+        if me_to_goal < ball_to_goal:
             return True
         return False
 

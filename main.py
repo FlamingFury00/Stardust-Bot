@@ -19,6 +19,7 @@ from util.common import (
 )
 from util.objects import GoslingAgent
 from util.routines import (
+    SpeedKickoff,
     avoid_demo,
     center_ball,
     demo,
@@ -262,7 +263,7 @@ class Bot(GoslingAgent):
         # Alone
         else:
             if self.kickoff_flag:
-                self.set_intent(goto(self.ball.location, self.foes[0].location))
+                self.set_intent(SpeedKickoff())
                 return
 
             # Rotation and positioning
