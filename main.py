@@ -28,6 +28,7 @@ from util.routines import (
     goto,
     kickoff,
     kickoff2,
+    short_shot,
     steal_boost,
 )
 from util.tools import find_best_save, find_best_shot
@@ -311,6 +312,10 @@ class Bot(GoslingAgent):
                 if best_save is not None:
                     self.set_intent(best_save)
                     return
+
+            if self.ball.location[2] <= 95:
+                self.set_intent(short_shot(self.foe_goal.location))
+                return
 
         # If none of the previous conditions are met, the bot positions itself in our home
         # self.set_intent(goto(self.friend_goal.location))
