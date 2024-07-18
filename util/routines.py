@@ -510,7 +510,7 @@ class goto:
         )
 
         velocity = 1 + agent.me.velocity.magnitude()
-        if distance_remaining < 500:
+        if distance_remaining < 500 and agent.kickoff_flag:
             agent.push(flip(local_target))
         elif (
             abs(angles[1]) < 0.05
@@ -528,6 +528,8 @@ class goto:
             agent.push(flip(local_target, True))
         elif agent.me.airborne:
             agent.push(recovery(self.target))
+        else:
+            agent.pop()
 
 
 class goto_boost:

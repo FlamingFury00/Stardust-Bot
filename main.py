@@ -27,6 +27,7 @@ from util.routines import (
     goto,
     kickoff,
     kickoff2,
+    short_shot,
     steal_boost,
 )
 from util.tools import find_best_save, find_best_shot
@@ -272,7 +273,7 @@ class Bot(GoslingAgent):
                     return self.set_intent(goto(desired_zone[0]))
 
             if self.is_in_front_of_ball():
-                self.set_intent(goto(self.friend_goal.location))
+                self.set_intent(goto(self.friend_goal.location, self.ball.location))
 
             # Boost grabbing
             if (
@@ -303,7 +304,7 @@ class Bot(GoslingAgent):
                     self.set_intent(best_shot)
                     return
                 else:
-                    self.set_intent(goto(self.friend_goal.location))
+                    self.set_intent(short_shot(self.foe_goal.location))
 
             # Defence
             # if is_ball_going_towards_goal(self):
@@ -313,5 +314,5 @@ class Bot(GoslingAgent):
                     self.set_intent(best_save)
                     return
 
-        # If none of the previous conditions are met, the bot positions itself in our home
-        # self.set_intent(goto(self.friend_goal.location))
+            # If none of the previous conditions are met, the bot positions itself in our home
+            self.set_intent(goto(self.friend_goal.location))
