@@ -8,7 +8,6 @@ from util.common import (
     in_field,
     is_on_wall,
     post_correction,
-    side,
 )
 from util.objects import Vector3
 from util.routines import (
@@ -290,38 +289,41 @@ def find_saves(agent, targets):
 
 
 def find_best_shot(agent, closest_foe):
-    left_field = Vector3(
-        4200 * -side(agent.team), agent.ball.location.y + (1000 * -side(agent.team)), 0
+    foe_team = -1 if agent.team == 1 else 1
+    team = -foe_team
+
+    best_shot_dir = (
+        Vector3(foe_team * 793, foe_team * 5213, min(92.75 * 3, 321.3875)),
+        Vector3(
+            -foe_team * 793,
+            foe_team * 5213,
+            max(642.775 - 92.75 * 2, 321.3875),
+        ),
     )
-    left_mid_field = Vector3(
-        1000 * -side(agent.team), agent.ball.location.y + (1500 * -side(agent.team)), 0
+    offensive_shot = (
+        Vector3(foe_team * 893, foe_team * 5120, min(92.75 * 2, 321.3875)),
+        Vector3(
+            foe_team * -893,
+            foe_team * 5120,
+            max(642.775 - 92.75, 321.3875),
+        ),
     )
-    right_mid_field = Vector3(
-        1000 * side(agent.team), agent.ball.location.y + (1500 * -side(agent.team)), 0
-    )
-    right_field = Vector3(
-        4200 * side(agent.team), agent.ball.location.y + (1000 * -side(agent.team)), 0
+    anti_shot = (
+        Vector3(-team * 1536, team * 5120, 1285.55),
+        Vector3(team * 1536, team * 5120, 1285.55),
     )
     if len(agent.friends) > 0:
         targets = {
-            "goal": (agent.foe_goal.left_post, agent.foe_goal.right_post),
-            "leftfield": (left_field, left_mid_field),
-            "rightfield": (right_mid_field, right_field),
-            "anywhere_but_my_net": (
-                agent.friend_goal.right_post,
-                agent.friend_goal.left_post,
-            ),
+            "goal": best_shot_dir,
+            "offensive": offensive_shot,
+            "anywhere_but_my_net": anti_shot,
             "pass": (agent.get_closest_teammate().location, agent.foe_goal.location),
         }
     else:
         targets = {
-            "goal": (agent.foe_goal.left_post, agent.foe_goal.right_post),
-            "leftfield": (left_field, left_mid_field),
-            "rightfield": (right_mid_field, right_field),
-            "anywhere_but_my_net": (
-                agent.friend_goal.right_post,
-                agent.friend_goal.left_post,
-            ),
+            "goal": best_shot_dir,
+            "offensive": offensive_shot,
+            "anywhere_but_my_net": anti_shot,
         }
     shots = find_hits(agent, targets)
     best_score = 0
@@ -380,38 +382,41 @@ def find_best_shot(agent, closest_foe):
 
 
 def find_best_save(agent, closest_foe):
-    left_field = Vector3(
-        4200 * -side(agent.team), agent.ball.location.y + (1000 * -side(agent.team)), 0
+    foe_team = -1 if agent.team == 1 else 1
+    team = -foe_team
+
+    best_shot_dir = (
+        Vector3(foe_team * 793, foe_team * 5213, min(92.75 * 3, 321.3875)),
+        Vector3(
+            -foe_team * 793,
+            foe_team * 5213,
+            max(642.775 - 92.75 * 2, 321.3875),
+        ),
     )
-    left_mid_field = Vector3(
-        1000 * -side(agent.team), agent.ball.location.y + (1500 * -side(agent.team)), 0
+    offensive_shot = (
+        Vector3(foe_team * 893, foe_team * 5120, min(92.75 * 2, 321.3875)),
+        Vector3(
+            foe_team * -893,
+            foe_team * 5120,
+            max(642.775 - 92.75, 321.3875),
+        ),
     )
-    right_mid_field = Vector3(
-        1000 * side(agent.team), agent.ball.location.y + (1500 * -side(agent.team)), 0
-    )
-    right_field = Vector3(
-        4200 * side(agent.team), agent.ball.location.y + (1000 * -side(agent.team)), 0
+    anti_shot = (
+        Vector3(-team * 1536, team * 5120, 1285.55),
+        Vector3(team * 1536, team * 5120, 1285.55),
     )
     if len(agent.friends) > 0:
         targets = {
-            "goal": (agent.foe_goal.left_post, agent.foe_goal.right_post),
-            "leftfield": (left_field, left_mid_field),
-            "rightfield": (right_mid_field, right_field),
-            "anywhere_but_my_net": (
-                agent.friend_goal.right_post,
-                agent.friend_goal.left_post,
-            ),
+            "goal": best_shot_dir,
+            "offensive": offensive_shot,
+            "anywhere_but_my_net": anti_shot,
             "pass": (agent.get_closest_teammate().location, agent.foe_goal.location),
         }
     else:
         targets = {
-            "goal": (agent.foe_goal.left_post, agent.foe_goal.right_post),
-            "leftfield": (left_field, left_mid_field),
-            "rightfield": (right_mid_field, right_field),
-            "anywhere_but_my_net": (
-                agent.friend_goal.right_post,
-                agent.friend_goal.left_post,
-            ),
+            "goal": best_shot_dir,
+            "offensive": offensive_shot,
+            "anywhere_but_my_net": anti_shot,
         }
     saves = find_saves(agent, targets)
     best_score = 0
@@ -437,14 +442,14 @@ def find_best_save(agent, closest_foe):
         score = 100 - saves["anywhere_but_my_net"][0].intercept_time + agent.time
         if score > best_score:
             best_shot = saves["anywhere_but_my_net"][0]
-    if len(saves["leftfield"]) > 0:
-        score = 100 - saves["leftfield"][0].intercept_time + agent.time
+    if len(saves["offensive"]) > 0:
+        score = 100 - saves["offensive"][0].intercept_time + agent.time
         if score > best_score:
             best_score = score
-            best_shot = saves["leftfield"][0]
-    if len(saves["rightfield"]) > 0:
-        score = 100 - saves["rightfield"][0].intercept_time + agent.time
-        if score > best_score:
-            best_score = score
-            best_shot = saves["rightfield"][0]
+            best_shot = saves["offensive"][0]
+    # if len(saves["rightfield"]) > 0:
+    #     score = 100 - saves["rightfield"][0].intercept_time + agent.time
+    #     if score > best_score:
+    #         best_score = score
+    #         best_shot = saves["rightfield"][0]
     return best_shot
