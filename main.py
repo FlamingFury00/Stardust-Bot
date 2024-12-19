@@ -263,7 +263,7 @@ class Bot(GoslingAgent):
         # Alone
         else:
             if self.kickoff_flag:
-                self.set_intent(goto(self.ball.location))
+                self.set_intent(goto(self.ball.location, self.foes[0].location))
                 return
 
             # Rotation and positioning
