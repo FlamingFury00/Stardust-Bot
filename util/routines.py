@@ -1630,6 +1630,7 @@ class dribble:
 
             angles = defaultPD(agent, agent.me.local(final_target - agent.me.location))
             defaultThrottle(agent, cap(ball_speed + distance + 800, 0, 2300))
+
             agent.controller.boost = (
                 False
                 if agent.me.airborne or abs(angles[1]) > 0.3
@@ -1651,6 +1652,11 @@ class dribble:
             defaultThrottle(agent, cap(local_ball_offset[0] * 2 + ball_speed, 0, 2300))
             if agent.ball.location.z < 50 or distance > 200:
                 agent.pop()
+
+        local_target = agent.me.local(self.target - agent.me.location)
+
+        if (agent.foes[0].location - agent.me.location).magnitude() < 500:
+            agent.push(flip(local_target))
         if agent.me.airborne or agent.me.location.z > 500 or agent.rotation_index != 0:
             agent.pop()
 

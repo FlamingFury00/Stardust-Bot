@@ -104,6 +104,9 @@ class GoslingAgent(BaseAgent):
         # Shorthand for clearing the stack of all routines
         self.stack = []
 
+    def is_clear(self) -> bool:
+        return self.intent is None
+
     def preprocess(self, packet):
         # Calling the update functions for all of the objects
         if packet.num_cars != len(self.friends) + len(self.foes) + 1:
@@ -289,7 +292,8 @@ class GoslingAgent(BaseAgent):
     def is_in_front_of_ball(self):
         me_to_goal = (self.me.location - self.foe_goal.location).magnitude()
         ball_to_goal = (self.ball.location - self.foe_goal.location).magnitude()
-        if me_to_goal < ball_to_goal:
+        goal_to_me = (self.me.location - self.friend_goal.location).magnitude()
+        if me_to_goal > 1000 and me_to_goal < ball_to_goal and goal_to_me >= 500:
             return True
         return False
 
