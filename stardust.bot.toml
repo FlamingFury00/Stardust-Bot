@@ -1,0 +1,14 @@
+[settings]
+agent_id = "flamingfury00/stardust"
+name = "Stardust"
+loadout_file = "loadout.toml"
+run_command = ".\\venv\\Scripts\\python.exe main.py"
+run_command_linux = "./venv/bin/python main.py"
+logo_file = "stardust.png"
+
+[details]
+description = "A bot that always tries to do teamplays and passes."
+fun_fact = "The bot sucks on defense and misses a lot of chances :)"
+source_link = "https://github.com/FlamingFury00/Stardust-Bot"
+developer = "FlamingFury00"
+language = "Python"

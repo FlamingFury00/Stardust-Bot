@@ -23,6 +23,20 @@ def cap(x, low, high):
     return x
 
 
+def scale_prediction_slices(struct, v4_slices, v4_tps=60.0):
+    # Converts a v4 slice count (60Hz) to the equivalent number of slices in v5
+    if struct is None or v4_slices <= 0:
+        return v4_slices
+    slices = getattr(struct, "slices", None)
+    if slices is None or len(slices) < 2:
+        return v4_slices
+    dt = slices[1].game_seconds - slices[0].game_seconds
+    if dt <= 0:
+        return v4_slices
+    scale = (1.0 / v4_tps) / dt
+    return max(1, int(round(v4_slices * scale)))
+
+
 def defaultPD(agent, local_target, direction=1.0):
     # points the car towards a given local target.
     # Direction can be changed to allow the car to steer towards a target while driving backwards
@@ -513,16 +527,15 @@ def steerPD(angle, rate):
 
 
 def is_closest_kickoff(agent, own_car):
-    # distance is calculated as distance + index - boost
-    # boost added to allow the bot with the most boost to go for the ball in situations
-    # were 2 bots are more or less equally close
+    # distance is calculated purely by distance to ball
+    # In V5, car.index is player_id which can be large, so we don't use it as tiebreaker
     if not len(agent.friends):
         return True
-    own_distance = (own_car.location - agent.ball.location).magnitude() + own_car.index
+    own_distance = (own_car.location - agent.ball.location).magnitude()
     for car in agent.friends + [agent.me]:
         if own_car.index == car.index:
             continue
-        other_distance = (car.location - agent.ball.location).magnitude() + car.index
+        other_distance = (car.location - agent.ball.location).magnitude()
         if other_distance < own_distance:
             return False
     return True
@@ -533,20 +546,19 @@ def is_second_closest_kickof(agent):
         return False
     if len(agent.friends) < 1:
         return False
-    own_distance = (
-        agent.me.location - agent.ball.location
-    ).magnitude() + agent.me.index
+    own_distance = (agent.me.location - agent.ball.location).magnitude()
     closest_index = -1
     for car in agent.friends:
         if is_closest_kickoff(agent, car):
             closest_index = car.index
 
-    if closest_index == agent.index:
+    # Compare with player_id, not list index
+    if closest_index == agent.me.index:
         return False
     for car in agent.friends:
         if car.index == closest_index:
             continue
-        other_distance = (car.location - agent.ball.location).magnitude() + car.index
+        other_distance = (car.location - agent.ball.location).magnitude()
         if other_distance < own_distance:
             return False
     return True
@@ -648,7 +660,8 @@ def is_second_closest(agent):
         if is_closest(agent, car, True):
             closest_index = car.index
 
-    if closest_index == agent.index:
+    # Compare with player_id (agent.me.index), not list position (agent.index)
+    if closest_index == agent.me.index:
         return False
     for car in agent.friends:
         if car.index == closest_index:
@@ -889,7 +902,9 @@ def are_no_bots_back(agent):
 
 def is_ball_centering(agent, friendly=False):
     struct = agent.get_ball_prediction_struct()
-    for i in range(15, struct.num_slices, 10):
+    start = scale_prediction_slices(struct, 15)
+    step = scale_prediction_slices(struct, 10)
+    for i in range(start, struct.num_slices, step):
         ball_location = Vector3(struct.slices[i].physics.location)
         if abs(ball_location[0]) < 1500:
             if ball_location[1] * side(agent.team) < -3000 and not friendly:

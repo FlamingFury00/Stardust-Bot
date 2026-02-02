@@ -8,6 +8,7 @@ from util.common import (
     in_field,
     is_on_wall,
     post_correction,
+    scale_prediction_slices,
     side,
 )
 from util.objects import Vector3
@@ -39,7 +40,7 @@ def find_hits(agent, targets):
 
     # Begin looking at slices 0.25s into the future
     # The number of slices
-    i = 10
+    i = scale_prediction_slices(struct, 10)
     while i < struct.num_slices:
         # Gather some data about the slice
         intercept_time = struct.slices[i].game_seconds
@@ -52,7 +53,8 @@ def find_hits(agent, targets):
                 break  # abandon search if ball is scored at/after this point
 
             # determine the next slice we will look at, based on ball velocity (slower ball needs fewer slices)
-            i += 15 - cap(int(ball_velocity // 150), 0, 13)
+            step_slices = 15 - cap(int(ball_velocity // 150), 0, 13)
+            i += scale_prediction_slices(struct, step_slices)
 
             car_to_ball = ball_location - agent.me.location
             # Adding a True to a vector's normalize will have it also return the magnitude of the vector
@@ -200,7 +202,7 @@ def find_saves(agent, targets):
 
     # Begin looking at slices 0.25s into the future
     # The number of slices
-    i = 10
+    i = scale_prediction_slices(struct, 10)
     while i < struct.num_slices:
         # Gather some data about the slice
         intercept_time = struct.slices[i].game_seconds
@@ -213,7 +215,8 @@ def find_saves(agent, targets):
                 break  # abandon search if ball is scored at/after this point
 
             # determine the next slice we will look at, based on ball velocity (slower ball needs fewer slices)
-            i += 15 - cap(int(ball_velocity // 150), 0, 13)
+            step_slices = 15 - cap(int(ball_velocity // 150), 0, 13)
+            i += scale_prediction_slices(struct, step_slices)
 
             car_to_ball = (ball_location - agent.me.location).flatten()
             # Adding a True to a vector's normalize will have it also return the magnitude of the vector
@@ -302,7 +305,8 @@ def find_best_shot(agent, closest_foe):
     right_field = Vector3(
         4200 * side(agent.team), agent.ball.location.y + (1000 * -side(agent.team)), 0
     )
-    if len(agent.friends) > 0:
+    closest_teammate = agent.get_closest_teammate()
+    if len(agent.friends) > 0 and closest_teammate is not None:
         targets = {
             "goal": (agent.foe_goal.left_post, agent.foe_goal.right_post),
             "leftfield": (left_field, left_mid_field),
@@ -311,7 +315,7 @@ def find_best_shot(agent, closest_foe):
                 agent.friend_goal.right_post,
                 agent.friend_goal.left_post,
             ),
-            "pass": (agent.get_closest_teammate().location, agent.foe_goal.location),
+            "pass": (closest_teammate.location, agent.foe_goal.location),
         }
     else:
         targets = {
@@ -328,11 +332,14 @@ def find_best_shot(agent, closest_foe):
     best_shot = short_shot(agent.foe_goal.location)
     # best_shot = None
     if len(shots["goal"]) > 0:
+        foe_eta = (
+            eta(closest_foe, shots["goal"][0].ball_location)[0] if closest_foe else 5.0
+        )
         score = (
             100.3
             - shots["goal"][0].intercept_time
             + agent.time
-            + eta(closest_foe, shots["goal"][0].ball_location)[0] / 3
+            + foe_eta / 3
             - eta(agent.me, shots["goal"][0].ball_location)[0] / 3
         )
         if score > best_score:
@@ -392,7 +399,8 @@ def find_best_save(agent, closest_foe):
     right_field = Vector3(
         4200 * side(agent.team), agent.ball.location.y + (1000 * -side(agent.team)), 0
     )
-    if len(agent.friends) > 0:
+    closest_teammate = agent.get_closest_teammate()
+    if len(agent.friends) > 0 and closest_teammate is not None:
         targets = {
             "goal": (agent.foe_goal.left_post, agent.foe_goal.right_post),
             "leftfield": (left_field, left_mid_field),
@@ -401,7 +409,7 @@ def find_best_save(agent, closest_foe):
                 agent.friend_goal.right_post,
                 agent.friend_goal.left_post,
             ),
-            "pass": (agent.get_closest_teammate().location, agent.foe_goal.location),
+            "pass": (closest_teammate.location, agent.foe_goal.location),
         }
     else:
         targets = {
@@ -422,11 +430,14 @@ def find_best_save(agent, closest_foe):
     #         if score > best_score:
     #             best_shot = saves["pass"][0]
     if len(saves["goal"]) > 0:
+        foe_eta = (
+            eta(closest_foe, saves["goal"][0].ball_location)[0] if closest_foe else 5.0
+        )
         score = (
             100
             - saves["goal"][0].intercept_time
             + agent.time
-            + eta(closest_foe, saves["goal"][0].ball_location)[0] / 2
+            + foe_eta / 2
             - 1
             + distance_to_wall(saves["goal"][0].ball_location) / 1000
         )

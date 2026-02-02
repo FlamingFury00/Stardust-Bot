@@ -1,22 +1,36 @@
 import math
 
-import rlbot.utils.structures.game_data_struct as game_data_struct
-from rlbot.agents.base_agent import BaseAgent, SimpleControllerState
+from rlbot import flat
+from rlbot.managers import Bot
 
 # This file holds all of the objects used in gosling utils
 # Includes custom vector and matrix objects
 
 
-class GoslingAgent(BaseAgent):
+class BallPredictionCompat:
+    def __init__(self, prediction: flat.BallPrediction):
+        self._prediction = prediction
+
+    @property
+    def slices(self):
+        return self._prediction.slices
+
+    @property
+    def num_slices(self):
+        return len(self._prediction.slices)
+
+
+class GoslingAgent(Bot):
     # This is the main object of Gosling Utils. It holds/updates information about the game and runs routines
     # All utils rely on information being structured and accessed the same way as configured in this class
-    def initialize_agent(self):
+    def initialize(self):
         # A list of cars for both teammates and opponents
         self.friends = []
         self.foes = []
         self.role = "defender"  # Default role
         # This holds the carobject for our agent
-        self.me = car_object(self.index)
+        # In V5, use player_id for stable identification
+        self.me = car_object(self.player_id)
 
         self.ball = ball_object()
         self.game = game_object()
@@ -32,7 +46,7 @@ class GoslingAgent(BaseAgent):
         # Whether or not GoslingAgent has run its get_ready() function
         self.ready = False
         # the controller that is returned to the framework after every tick
-        self.controller = SimpleControllerState()
+        self.controller = flat.ControllerState()
         # a flag that tells us when kickoff is happening
         self.kickoff_flag = False
         # text printed at the top left of the screen
@@ -52,32 +66,42 @@ class GoslingAgent(BaseAgent):
         self.CT = 0
         self.FPS = 120
 
+        self.debug_lines = []
+        self.renderer.set_resolution(1920, 1080)
+
     def get_ready(self, packet):
         # Preps all of the objects that will be updated during play
-        field_info = self.get_field_info()
-        for i in range(field_info.num_boosts):
-            boost = field_info.boost_pads[i]
-            self.boosts.append(boost_object(i, boost.location))
+        field_info = self.field_info
+        for i, boost in enumerate(field_info.boost_pads):
+            self.boosts.append(boost_object(i, boost))
         self.refresh_player_lists(packet)
-        self.ball.update(packet)
+        if len(packet.balls) > 0:
+            self.ball.update(packet)
+        # Update self.me on first tick too
+        self.me.update(packet)
         self.ready = True
 
     def refresh_player_lists(self, packet):
-        # makes new freind/foe lists
+        # makes new friend/foe lists
         # Useful to keep separate from get_ready because humans can join/leave a match
+        # In V5, use player_id as the stable identifier, not list position
         self.friends = [
-            car_object(i, packet)
-            for i in range(packet.num_cars)
-            if packet.game_cars[i].team == self.team and i != self.index
+            car_object(packet.players[i].player_id, packet)
+            for i in range(len(packet.players))
+            if packet.players[i].team == self.team
+            and packet.players[i].player_id != self.player_id
         ]
         self.foes = [
-            car_object(i, packet)
-            for i in range(packet.num_cars)
-            if packet.game_cars[i].team != self.team
+            car_object(packet.players[i].player_id, packet)
+            for i in range(len(packet.players))
+            if packet.players[i].team != self.team
         ]
 
     def set_intent(self, routine):
         self.intent = routine
+
+    def get_ball_prediction_struct(self):
+        return BallPredictionCompat(self.ball_prediction)
 
     def push(self, routine):
         # Shorthand for adding a routine to the stack
@@ -90,15 +114,19 @@ class GoslingAgent(BaseAgent):
 
     def line(self, start, end, color=None):
         color = color if color is not None else [255, 255, 255]
-        self.renderer.draw_line_3d(start, end, self.renderer.create_color(255, *color))
+        self.renderer.draw_line_3d(
+            to_flat_vec3(start),
+            to_flat_vec3(end),
+            self.renderer.create_color(color[0], color[1], color[2], 255),
+        )
 
     def debug_intent(self):
         # Draws the stack on the screen
-        white = self.renderer.white()
+        white = self.renderer.white
 
         if self.intent is not None:
             text = self.intent.__class__.__name__
-            self.renderer.draw_string_2d(10, 100, 3, 3, text, white)
+            self.renderer.draw_string_2d(text, 10, 100, 3, white)
 
     def clear(self):
         # Shorthand for clearing the stack of all routines
@@ -109,7 +137,7 @@ class GoslingAgent(BaseAgent):
 
     def preprocess(self, packet):
         # Calling the update functions for all of the objects
-        if packet.num_cars != len(self.friends) + len(self.foes) + 1:
+        if len(packet.players) != len(self.friends) + len(self.foes) + 1:
             self.refresh_player_lists(packet)
         for car in self.friends:
             car.update(packet)
@@ -117,21 +145,42 @@ class GoslingAgent(BaseAgent):
             car.update(packet)
         for pad in self.boosts:
             pad.update(packet)
-        self.ball.update(packet)
+        if len(packet.balls) > 0:
+            self.ball.update(packet)
         self.me.update(packet)
         self.game.update(packet)
-        self.time = packet.game_info.seconds_elapsed
+        self.time = packet.match_info.seconds_elapsed
         # When a new kickoff begins we empty the stack
-        if (
-            self.kickoff_flag is False
-            and packet.game_info.is_round_active
-            and packet.game_info.is_kickoff_pause
-        ):
+        match_phase = packet.match_info.match_phase
+        round_active = match_phase in {
+            flat.MatchPhase.Active,
+            flat.MatchPhase.Kickoff,
+            flat.MatchPhase.Countdown,
+        }
+        kickoff_pause = match_phase in {
+            flat.MatchPhase.Kickoff,
+            flat.MatchPhase.Countdown,
+        }
+        if self.kickoff_flag is False and round_active and kickoff_pause:
             self.pop()
         # Tells us when to go for kickoff
-        self.kickoff_flag = (
-            packet.game_info.is_round_active and packet.game_info.is_kickoff_pause
-        )
+        self.kickoff_flag = round_active and kickoff_pause
+        # Compute rotation index (0 = closest to ball, 1 = second, 2 = third, etc.)
+        self._update_rotation_index()
+
+    def _update_rotation_index(self):
+        """Compute rotation position among teammates based on distance to ball."""
+        if not self.friends:
+            self.rotation_index = 0
+            return
+
+        my_distance = (self.me.location - self.ball.location).magnitude()
+        closer_teammates = 0
+        for friend in self.friends:
+            friend_distance = (friend.location - self.ball.location).magnitude()
+            if friend_distance < my_distance:
+                closer_teammates += 1
+        self.rotation_index = closer_teammates
 
     def TimeManager(self):
         if not self.LT:
@@ -154,8 +203,8 @@ class GoslingAgent(BaseAgent):
             self.DT += 1
 
     def get_output(self, packet):
-        # Reset controller
-        self.controller.__init__()
+        # Reset controller - create fresh instance for V5 compatibility
+        self.controller = flat.ControllerState()
         # Get ready, then preprocess
         if not self.ready:
             self.get_ready(packet)
@@ -163,9 +212,12 @@ class GoslingAgent(BaseAgent):
 
         self.TimeManager()
 
+        if len(packet.balls) == 0:
+            return self.controller
+
         self.renderer.begin_rendering()
         # Run our strategy code
-        self.run()
+        self.run_strategy()
         # run the routine on the end of the stack
         if self.intent is not None:
             self.intent.run(self)
@@ -174,15 +226,20 @@ class GoslingAgent(BaseAgent):
         return self.controller
 
     def print_debug(self):
-        white = self.renderer.white()
-        self.renderer.draw_string_2d(10, 150, 3, 3, self.debug_text, white)
+        white = self.renderer.white
+        self.renderer.draw_string_2d(self.debug_text, 10, 150, 3, white)
 
     def add_debug_line(self, name, vec1, vec2, color=[255, 255, 255]):
         dupes = [line for line in self.debug_lines if line.name == name]
         if len(dupes) > 0:
             return
         self.debug_lines.append(
-            DebugLine(name, vec1, vec2, self.renderer.create_color(255, *color))
+            DebugLine(
+                name,
+                vec1,
+                vec2,
+                self.renderer.create_color(color[0], color[1], color[2], 255),
+            )
         )
 
     def remove_debug_line(self, name):
@@ -193,7 +250,11 @@ class GoslingAgent(BaseAgent):
 
     def draw_debug_lines(self):
         for line in self.debug_lines:
-            self.renderer.draw_line_3d(line.vec1, line.vec2, line.color)
+            self.renderer.draw_line_3d(
+                to_flat_vec3(line.vec1),
+                to_flat_vec3(line.vec2),
+                line.color,
+            )
 
     def is_close_to_ball(self, distance_threshold=600):
         ball_distance = (self.ball.location - self.me.location).magnitude()
@@ -204,6 +265,8 @@ class GoslingAgent(BaseAgent):
         return opponent_distance < distance_threshold
 
     def get_closest_opponent(self):
+        if not self.foes:
+            return None
         closest_opponent = self.foes[0]
         closest_distance = float("inf")
 
@@ -216,6 +279,8 @@ class GoslingAgent(BaseAgent):
         return closest_opponent
 
     def get_opponent_closest_to_ball(self):
+        if not self.foes:
+            return None
         closest_opponent = self.foes[0]
         closest_distance = float("inf")
 
@@ -228,6 +293,8 @@ class GoslingAgent(BaseAgent):
         return closest_opponent
 
     def get_closest_teammate(self):
+        if not self.friends:
+            return None
         closest_teammate = self.friends[0]
         closest_distance = float("inf")
 
@@ -242,6 +309,10 @@ class GoslingAgent(BaseAgent):
     def get_best_boost(self):
         best_boost = None
         best_score = float("inf")
+
+        # Get closest foe for filtering, if any exist
+        closest_foe = self.foes[0] if self.foes else None
+
         available_boosts = [
             boost
             for boost in self.boosts
@@ -249,9 +320,14 @@ class GoslingAgent(BaseAgent):
             and boost.active
             and (boost.location - self.friend_goal.location).magnitude()
             < (self.ball.location - self.friend_goal.location).magnitude()
-            and (self.foes[0].location - self.ball.location).magnitude()
-            > (self.me.location - self.ball.location).magnitude()
-            and self.foes[0].location.magnitude() > 1000
+            and (
+                closest_foe is None
+                or (
+                    (closest_foe.location - self.ball.location).magnitude()
+                    > (self.me.location - self.ball.location).magnitude()
+                    and closest_foe.location.magnitude() > 1000
+                )
+            )
         ]
 
         for boost in available_boosts:
@@ -297,7 +373,7 @@ class GoslingAgent(BaseAgent):
             return True
         return False
 
-    def run(self):
+    def run_strategy(self):
         # override this with your strategy code
         pass
 
@@ -318,17 +394,28 @@ class car_object:
         self.doublejumped = False
         self.team = 0
         self.boost = 0
-        self.index = index
+        self.index = index  # This is player_id in V5
         if packet is not None:
-            self.team = packet.game_cars[self.index].team
+            player = self._find_player_by_id(packet)
+            if player is not None:
+                self.team = player.team
             self.update(packet)
 
     def local(self, value):
         # Shorthand for self.matrix.dot(value)
         return self.orientation.dot(value)
 
+    def _find_player_by_id(self, packet):
+        """Find player in packet by player_id (self.index is player_id in V5)."""
+        for player in packet.players:
+            if player.player_id == self.index:
+                return player
+        return None
+
     def update(self, packet):
-        car = packet.game_cars[self.index]
+        car = self._find_player_by_id(packet)
+        if car is None:
+            return  # Player not found (possibly disconnected)
         self.location.data = [
             car.physics.location.x,
             car.physics.location.y,
@@ -356,11 +443,11 @@ class car_object:
                 car.physics.angular_velocity.z,
             ]
         ).data
-        self.demolished = car.is_demolished
-        self.airborne = not car.has_wheel_contact
-        self.supersonic = car.is_super_sonic
-        self.jumped = car.jumped
-        self.doublejumped = car.double_jumped
+        self.demolished = car.demolished_timeout > 0
+        self.airborne = car.air_state != flat.AirState.OnGround
+        self.supersonic = car.is_supersonic
+        self.jumped = car.has_jumped
+        self.doublejumped = car.has_double_jumped
         self.boost = car.boost
 
     @property
@@ -387,7 +474,7 @@ class ball_object:
         self.latest_touched_team = 0
 
     def update(self, packet):
-        ball = packet.game_ball
+        ball = packet.balls[0]
         self.location.data = [
             ball.physics.location.x,
             ball.physics.location.y,
@@ -398,19 +485,32 @@ class ball_object:
             ball.physics.velocity.y,
             ball.physics.velocity.z,
         ]
-        self.latest_touched_time = ball.latest_touch.time_seconds
-        self.latest_touched_team = ball.latest_touch.team
+        latest_time = self.latest_touched_time
+        latest_team = self.latest_touched_team
+        for player in packet.players:
+            touch = player.latest_touch
+            if touch is None:
+                continue
+            if touch.ball_index != 0:
+                continue
+            if touch.game_seconds >= latest_time:
+                latest_time = touch.game_seconds
+                latest_team = player.team
+        self.latest_touched_time = latest_time
+        self.latest_touched_team = latest_team
 
 
 class boost_object:
-    def __init__(self, index, location):
+    def __init__(self, index, boost_pad):
         self.index = index
-        self.location = Vector3(location.x, location.y, location.z)
+        self.location = Vector3(
+            boost_pad.location.x, boost_pad.location.y, boost_pad.location.z
+        )
         self.active = True
-        self.large = self.location.z > 7
+        self.large = boost_pad.is_full_boost
 
     def update(self, packet):
-        self.active = packet.game_boosts[self.index].is_active
+        self.active = packet.boost_pads[self.index].is_active
 
 
 class goal_object:
@@ -434,13 +534,20 @@ class game_object:
         self.match_ended = False
 
     def update(self, packet):
-        game = packet.game_info
+        game = packet.match_info
         self.time = game.seconds_elapsed
         self.time_remaining = game.game_time_remaining
         self.overtime = game.is_overtime
-        self.round_active = game.is_round_active
-        self.kickoff = game.is_kickoff_pause
-        self.match_ended = game.is_match_ended
+        self.round_active = game.match_phase in {
+            flat.MatchPhase.Active,
+            flat.MatchPhase.Kickoff,
+            flat.MatchPhase.Countdown,
+        }
+        self.kickoff = game.match_phase in {
+            flat.MatchPhase.Kickoff,
+            flat.MatchPhase.Countdown,
+        }
+        self.match_ended = game.match_phase == flat.MatchPhase.Ended
 
 
 class Matrix3:
@@ -486,9 +593,9 @@ class Vector3:
     def __init__(self, *args):
         if hasattr(args[0], "__getitem__"):
             self.data = list(args[0])
-        elif isinstance(args[0], game_data_struct.Vector3):
+        elif isinstance(args[0], flat.Vector3):
             self.data = [args[0].x, args[0].y, args[0].z]
-        elif isinstance(args[0], game_data_struct.Rotator):
+        elif isinstance(args[0], flat.Rotator):
             self.data = [args[0].pitch, args[0].yaw, args[0].roll]
         elif len(args) == 3:
             self.data = list(args)
@@ -672,3 +779,13 @@ class DebugLine:
         self.vec1 = vec1
         self.vec2 = vec2
         self.color = color
+
+
+def to_flat_vec3(value):
+    if isinstance(value, flat.Vector3):
+        return value
+    if hasattr(value, "x") and hasattr(value, "y") and hasattr(value, "z"):
+        return flat.Vector3(float(value.x), float(value.y), float(value.z))
+    if hasattr(value, "__getitem__"):
+        return flat.Vector3(float(value[0]), float(value[1]), float(value[2]))
+    raise TypeError(f"Unable to convert {value!r} to flat.Vector3")

@@ -49,11 +49,15 @@ class Bot(GoslingAgent):
 
         return True
 
-    def run(self):
+    def run_strategy(self):
+        if not self.is_clear():
+            return
+
         # 2v2
         if len(self.friends) == 1:
             if self.kickoff_flag and is_closest_kickoff(self, self.me):
-                self.set_intent(kickoff(self.me.location.x))
+                if self.is_clear():
+                    self.set_intent(kickoff(self.me.location.x))
                 return
 
             if self.kickoff_flag and is_second_closest_kickof(self):
@@ -97,13 +101,17 @@ class Bot(GoslingAgent):
                 and (self.ball.latest_touched_team != self.me.team)
                 and self.me.boost >= 30
             ):
-                self.set_intent(demo(self.get_opponent_closest_to_ball()))
-                return
+                target = self.get_opponent_closest_to_ball()
+                if target is not None:
+                    self.set_intent(demo(target))
+                    return
 
             demo_intent = detect_demo(self)
             if demo_intent[1] is not None:
-                self.set_intent(avoid_demo(self.get_closest_opponent()))
-                return
+                closest = self.get_closest_opponent()
+                if closest is not None:
+                    self.set_intent(avoid_demo(closest))
+                    return
 
             if (
                 should_attack(self)
@@ -156,11 +164,13 @@ class Bot(GoslingAgent):
         # 3v3
         elif len(self.friends) == 2:
             if self.kickoff_flag and is_closest_kickoff(self, self.me):
-                self.set_intent(kickoff(self.me.location.x))
+                if self.is_clear():
+                    self.set_intent(kickoff(self.me.location.x))
                 return
 
             if self.kickoff_flag and is_second_closest_kickof(self):
-                self.set_intent(kickoff2())
+                if self.is_clear():
+                    self.set_intent(kickoff2())
                 return
 
             # if is_ball_going_towards_goal(self) and is_closest(self, self.me):
@@ -201,13 +211,17 @@ class Bot(GoslingAgent):
                 and (self.ball.latest_touched_team != self.me.team)
                 and self.me.boost >= 30
             ):
-                self.set_intent(demo(self.get_opponent_closest_to_ball()))
-                return
+                target = self.get_opponent_closest_to_ball()
+                if target is not None:
+                    self.set_intent(demo(target))
+                    return
 
             demo_intent = detect_demo(self)
             if demo_intent[1] is not None:
-                self.set_intent(avoid_demo(self.get_closest_opponent()))
-                return
+                closest = self.get_closest_opponent()
+                if closest is not None:
+                    self.set_intent(avoid_demo(closest))
+                    return
 
             if (
                 should_attack(self)
@@ -326,3 +340,7 @@ class Bot(GoslingAgent):
                         self.set_intent(best_save)
 
                     return
+
+
+if __name__ == "__main__":
+    Bot("flamingfury00/stardust").run()

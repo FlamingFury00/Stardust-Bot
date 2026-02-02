@@ -125,8 +125,6 @@ class half_flip:
     def __init__(self):
         # the time the jump began
         self.time = -1
-        # keeps track of the frames the jump button has been released
-        self.counter = 0
 
     def run(self, agent):
         if self.time == -1:
@@ -136,9 +134,9 @@ class half_flip:
             elapsed = agent.time - self.time
         if elapsed < 0.15:
             agent.controller.jump = True
-        elif elapsed >= 0.15 and self.counter < 1:
+        elif elapsed < 0.2:
+            # Release jump briefly (time-based for V5 compatibility)
             agent.controller.jump = False
-            self.counter += 1
         elif elapsed < 0.6:
             agent.controller.jump = True
             agent.controller.pitch = 1
@@ -167,7 +165,6 @@ class aerial:
         self.jumping = on_ground
         self.time = -1
         self.jump_time = -1
-        self.counter = 0
 
     def run(self, agent):
         if self.time == -1:
@@ -197,15 +194,15 @@ class aerial:
 
             if jump_elapsed < JUMP_MAX_DURATION:
                 agent.controller.jump = True
-            elif elapsed >= JUMP_MAX_DURATION and self.counter < 3:
+            elif jump_elapsed < JUMP_MAX_DURATION + 0.05:
+                # Release jump for ~0.05s (time-based for V5 compatibility)
                 agent.controller.jump = False
-                self.counter += 1
-            elif elapsed < 0.3:
+            elif jump_elapsed < 0.3:
                 agent.controller.jump = True
             else:
                 self.jumping = jump_elapsed <= 0.3
         else:
-            agent.controller.jump = 0
+            agent.controller.jump = False
 
         delta_x = self.ball_location - xf
         direction = delta_x.normalize()
@@ -217,7 +214,11 @@ class aerial:
             else:
                 defaultPD(agent, agent.me.local(self.ball_location - agent.me.location))
 
-        if JUMP_MAX_DURATION <= elapsed < 0.3 and self.counter == 3:
+        if (
+            JUMP_MAX_DURATION <= elapsed < 0.3
+            and self.jump_time != -1
+            and (agent.time - self.jump_time) >= JUMP_MAX_DURATION + 0.05
+        ):
             agent.controller.roll = 0
             agent.controller.pitch = 0
             agent.controller.yaw = 0
@@ -225,13 +226,13 @@ class aerial:
 
         if agent.me.forward.angle3D(direction) < 0.3:
             if delta_x.magnitude() > 50:
-                agent.controller.boost = 1
+                agent.controller.boost = True
                 agent.controller.throttle = 0
             else:
-                agent.controller.boost = 0
+                agent.controller.boost = False
                 agent.controller.throttle = cap(0.5 * THROTTLE_ACCEL * T**2, 0, 1)
         else:
-            agent.controller.boost = 0
+            agent.controller.boost = False
             agent.controller.throttle = 0
 
         if T <= 0 or not shot_valid(agent, self, threshold=90):
@@ -292,8 +293,6 @@ class aerial_shot:
         self.jump_threshold = 584
         # what time we began our jump at
         self.jump_time = 0
-        # If we need a second jump we have to let go of the jump button for 3 frames, this counts how many frames we have let go for
-        self.counter = 0
 
     def run(self, agent):
         raw_time_remaining = self.intercept_time - agent.time
@@ -392,22 +391,19 @@ class aerial_shot:
                         agent.controller.boost = True
                 else:
                     angles = defaultPD(agent, agent.me.local(self.shot_vector))
-            if self.counter == 0 and (
-                time_since_jump <= 0.2 and local_acceleration_required[2] > 0
-            ):
+            # Time-based jump logic for V5 compatibility
+            if time_since_jump <= 0.2 and local_acceleration_required[2] > 0:
                 # hold the jump button up to 0.2 seconds to get the most acceleration from the first jump
                 agent.controller.jump = True
-            elif time_since_jump > 0.2 and self.counter < 3:
-                # Release the jump button for 3 ticks
+            elif time_since_jump < 0.25:
+                # Release the jump button for ~0.05s (time-based instead of frame counting)
                 agent.controller.jump = False
-                self.counter += 1
-            elif local_acceleration_required[2] > 300 and self.counter == 3:
+            elif local_acceleration_required[2] > 300 and time_since_jump < 0.3:
                 # the acceleration from the second jump is instant, so we only do it for 1 frame
                 agent.controller.jump = True
                 agent.controller.pitch = 0
                 agent.controller.yaw = 0
                 agent.controller.roll = 0
-                self.counter += 1
 
         if (
             raw_time_remaining < -0.25
@@ -433,8 +429,6 @@ class flip:
         self.boosting = boosting
         # the time the jump began
         self.time = -1
-        # keeps track of the frames the jump button has been released
-        self.counter = 0
 
     def run(self, agent):
         if self.time == -1:
@@ -443,11 +437,13 @@ class flip:
         else:
             elapsed = agent.time - self.time
         if elapsed < 0.1:
+            # First jump
             agent.controller.jump = True
-        elif elapsed >= 0.1 and self.counter < 3:
+        elif elapsed < 0.15:
+            # Release jump for ~0.05s (time-based instead of frame counting for V5)
             agent.controller.jump = False
-            self.counter += 1
         elif elapsed < 0.25 or (not self.cancel and elapsed < 0.85):
+            # Second jump + flip direction
             agent.controller.jump = True
             agent.controller.pitch = self.pitch
             agent.controller.yaw = self.yaw
@@ -686,7 +682,7 @@ class jump_shot:
         # Flags for what part of the routine we are in
         self.jumping = False
         self.dodging = False
-        self.counter = 0
+        self.jump_time = -1  # Time-based tracking instead of frame counter
 
     def run(self, agent):
         raw_time_remaining = self.intercept_time - agent.time
@@ -807,24 +803,28 @@ class jump_shot:
                 # Switch into the jump when the upward acceleration required reaches our threshold, and our lateral acceleration is negligible
                 self.jumping = True
         else:
+            # Track time since jump started for time-based logic
+            if self.jump_time == -1:
+                self.jump_time = agent.time
+            jump_elapsed = agent.time - self.jump_time
+
             if (
                 (raw_time_remaining > 0.2 and not shot_valid(agent, self, 60))
                 or raw_time_remaining <= -0.9
-                or (not agent.me.airborne and self.counter > 0)
+                or (not agent.me.airborne and jump_elapsed > 0.1)
             ):
                 agent.pop()
                 agent.push(recovery())
             elif (
-                self.counter == 0
+                jump_elapsed < 0.1
                 and local_acceleration_required[2] > 0.0
                 and raw_time_remaining > 0.083
             ):
                 # Initial jump to get airborne + we hold the jump button for extra power as required
                 agent.controller.jump = True
-            elif self.counter < 3:
-                # make sure we aren't jumping for at least 3 frames
+            elif jump_elapsed < 0.15:
+                # Release jump for ~0.05s (time-based for V5 compatibility)
                 agent.controller.jump = False
-                self.counter += 1
             elif raw_time_remaining <= 0.1 and raw_time_remaining > -0.9:
                 # dodge in the direction of the shot_vector
                 agent.controller.jump = True
@@ -865,7 +865,7 @@ class wall_shot:
         # Flags for what part of the routine we are in
         self.jumping = False
         self.dodging = False
-        self.counter = 0
+        self.jump_time = -1  # Time-based tracking instead of frame counter
 
     def run(self, agent):
         raw_time_remaining = self.intercept_time - agent.time
@@ -963,27 +963,31 @@ class wall_shot:
                 # Switch into the jump when the upward acceleration required reaches our threshold, and our lateral acceleration is negligible
                 self.jumping = True
         else:
+            # Track time since jump started for time-based logic
+            if self.jump_time == -1:
+                self.jump_time = agent.time
+            jump_elapsed = agent.time - self.jump_time
+
             if (
                 (raw_time_remaining > 0.2 and not shot_valid(agent, self, 60))
                 or raw_time_remaining <= -0.9
-                or (not agent.me.airborne and self.counter > 0)
+                or (not agent.me.airborne and jump_elapsed > 0.1)
                 or agent.rotation_index != 0
             ):
                 agent.pop()
                 agent.push(recovery())
             elif (
-                self.counter == 0
+                jump_elapsed < 0.1
                 and local_acceleration_required[2] > 0.0
                 and raw_time_remaining > 0.083
             ):
                 # Initial jump to get airborne + we hold the jump button for extra power as required
                 agent.controller.jump = True
                 agent.controller.boost = True
-            elif self.counter < 3:
-                # make sure we aren't jumping for at least 3 frames
+            elif jump_elapsed < 0.15:
+                # Release jump for ~0.05s (time-based for V5 compatibility)
                 agent.controller.jump = False
                 agent.controller.boost = True
-                self.counter += 1
             elif raw_time_remaining <= 0.1 and raw_time_remaining > -0.9:
                 # dodge in the direction of the shot_vector
                 agent.controller.jump = True
@@ -1013,15 +1017,23 @@ class kickoff2:
 
 
 class kickoff:
-    def __init__(self, x):
+    def __init__(self, x=None):
         self.time_of_kickoff = -1
-        self.corner_kickoff = abs(x) > 1500
-        self.straight_kickoff = abs(x) < 100
-        self.side = sign(x + 1)
+        # x parameter is now ignored - we compute position-based values in run() when we're sure data is fresh
+        self.initial_x = x
+        self.corner_kickoff = None
+        self.straight_kickoff = None
+        self.side = None
 
     def run(self, agent):
         if self.time_of_kickoff == -1:
             self.time_of_kickoff = agent.time
+            # Determine kickoff type on first run when position is definitely updated
+            x = agent.me.location.x
+            self.corner_kickoff = abs(x) > 1500
+            self.straight_kickoff = abs(x) < 100
+            self.side = sign(x + 0.1)  # +0.1 to avoid sign(0)=0
+
         elapsed = agent.time - self.time_of_kickoff
 
         car_to_ball = agent.ball.location - agent.me.location
@@ -1032,10 +1044,9 @@ class kickoff:
         # Check if the car is aligned with the center of the ball
         is_aligned = angle_difference < 0.5
 
-        corner_kickoff = abs(agent.me.location.x) > 1500
         team = -side(agent.team)
 
-        steer = self.side * team if corner_kickoff else -self.side * team
+        steer = self.side * team if self.corner_kickoff else -self.side * team
         local_car_to_ball = agent.me.local(car_to_ball)
 
         speed_flip_vector = Vector3(1 / math.sqrt(2), -steer / math.sqrt(2), 0)
@@ -1094,12 +1105,20 @@ class recovery:
         agent.controller.throttle = 1
         agent.controller.boost = self.boosting
 
-        angles_magnitude = angles[0] + angles[1] + angles[2]
+        angles_magnitude = abs(angles[0]) + abs(angles[1]) + abs(angles[2])
 
-        if angles_magnitude < 1 and not agent.me.doublejumped:
+        # Only wavedash if: aligned, not double jumped, low enough, and moving downward
+        can_wavedash = (
+            angles_magnitude < 0.5
+            and not agent.me.doublejumped
+            and agent.me.location.z < 300
+            and agent.me.location.z > 50
+            and agent.me.velocity.z < -100
+        )
+        if can_wavedash:
             agent.pop()
-            # Wavedash recovery!
             agent.push(wavedash())
+            return
 
         if not agent.me.airborne:
             agent.pop()
@@ -1108,28 +1127,38 @@ class recovery:
 class wavedash:
     # this routine will wavedash on recovery!
     def __init__(self):
-        self.step = 0
+        self.time = -1
 
     def run(self, agent):
+        if self.time == -1:
+            self.time = agent.time
+            elapsed = 0
+        else:
+            elapsed = agent.time - self.time
+
         if agent.me.velocity.flatten().magnitude() > 100:
             target = agent.me.velocity.flatten().normalize() * 100 + Vector3(0, 0, 50)
         else:
             target = agent.me.forward.flatten() * 100 + Vector3(0, 0, 50)
         local_target = agent.me.local(target)
         defaultPD(agent, local_target)
-        if self.step < 6 and not agent.me.airborne:
-            self.step += 1
-            if self.step < 3:
+
+        # Use time-based logic instead of frame counting for V5 compatibility
+        if not agent.me.airborne:
+            if elapsed < 0.05:  # ~6 frames at 120Hz - first jump
                 agent.controller.jump = True
-            else:
+            elif elapsed < 0.1:  # release jump
                 agent.controller.jump = False
+            else:
+                agent.pop()
         else:
-            if agent.me.location.z + agent.me.velocity.z * 0.2 < 5:
+            # Airborne - wait until close to ground to dodge
+            if agent.me.location.z + agent.me.velocity.z * 0.2 < 20:
                 agent.controller.jump = True
                 agent.controller.pitch = -1
                 agent.controller.yaw = agent.controller.roll = 0
                 agent.pop()
-            elif not agent.me.airborne or agent.me.doublejumped:
+            elif agent.me.doublejumped or elapsed > 1.5:
                 agent.pop()
 
 
@@ -1776,7 +1805,8 @@ class steal_boost:
 
 class demo:
     def __init__(self, target):
-        self.target_index = target
+        # target is a car_object, extract the index (player_id)
+        self.target_index = target.index if hasattr(target, "index") else target
         self.target = target
 
     def run(self, agent):
@@ -1784,6 +1814,9 @@ class demo:
 
         if car is None:
             car = self.target
+        if car is None:
+            agent.pop()
+            return
         distance_to_target = (agent.me.location - car.location).magnitude()
         velocity = (agent.me.velocity).magnitude()
         velocity_needed = 2200 - velocity
