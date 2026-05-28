@@ -36,18 +36,22 @@ def find_hits(agent, targets):
     # print(hits)
     # >{"goal":[a ton of jump and aerial routines,in order from soonest to latest], "anywhere_but_my_net":[more routines and stuff]}
     hits = {name: [] for name in targets}
-    struct = agent.get_ball_prediction_struct()
+    prediction = agent.ball_prediction
+    slices = prediction.slices
+    if len(slices) < 2:
+        return hits
+    prediction_dt = max(1e-6, slices[1].game_seconds - slices[0].game_seconds)
 
     # Begin looking at slices 0.25s into the future
     # The number of slices
     i = scale_prediction_slices(struct, 10)
     while i < struct.num_slices:
         # Gather some data about the slice
-        intercept_time = struct.slices[i].game_seconds
+        intercept_time = slices[i].game_seconds
         time_remaining = intercept_time - agent.time
         if time_remaining > 0:
-            ball_location = Vector3(struct.slices[i].physics.location)
-            ball_velocity = Vector3(struct.slices[i].physics.velocity).magnitude()
+            ball_location = Vector3(slices[i].physics.location)
+            ball_velocity = Vector3(slices[i].physics.velocity).magnitude()
 
             if abs(ball_location[1]) > 5250:
                 break  # abandon search if ball is scored at/after this point
@@ -198,18 +202,22 @@ def find_saves(agent, targets):
     # print(hits)
     # >{"goal":[a ton of jump and aerial routines,in order from soonest to latest], "anywhere_but_my_net":[more routines and stuff]}
     hits = {name: [] for name in targets}
-    struct = agent.get_ball_prediction_struct()
+    prediction = agent.ball_prediction
+    slices = prediction.slices
+    if len(slices) < 2:
+        return hits
+    prediction_dt = max(1e-6, slices[1].game_seconds - slices[0].game_seconds)
 
     # Begin looking at slices 0.25s into the future
     # The number of slices
     i = scale_prediction_slices(struct, 10)
     while i < struct.num_slices:
         # Gather some data about the slice
-        intercept_time = struct.slices[i].game_seconds
+        intercept_time = slices[i].game_seconds
         time_remaining = intercept_time - agent.time
         if time_remaining > 0:
-            ball_location = Vector3(struct.slices[i].physics.location)
-            ball_velocity = Vector3(struct.slices[i].physics.velocity).magnitude()
+            ball_location = Vector3(slices[i].physics.location)
+            ball_velocity = Vector3(slices[i].physics.velocity).magnitude()
 
             if abs(ball_location[1]) > 5250:
                 break  # abandon search if ball is scored at/after this point

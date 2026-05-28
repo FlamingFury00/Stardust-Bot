@@ -8,12 +8,15 @@ Welcome to the repository dedicated to [**RLBot**](http://www.rlbot.org/), a fra
 
 ---
 
-### :cd: Installation
+### :cd: Installation (RLBot v5)
 
 1. **Clone or download** this repository to your local machine.
-2. Launch **RLBotGUI**.
-3. Click on **"Add"** located at the top-left corner.
-4. Choose **"Load Folder"** and navigate to the repository folder.
+2. **Create a Python 3.11 virtual environment** in the repo and install dependencies from `requirements.txt`.
+3. Launch **RLBotGUI (v5)**.
+4. Click **"Add"** and select **`bot.toml`** (or load the folder and choose `bot.toml` when prompted).
+5. Start a match as usual in RLBotGUI.
+
+> **Note:** `bot.toml` + `loadout.toml` are the RLBot v5 configs. The legacy `Bot.cfg` and `appearance.cfg` were removed.
 
 ---
 

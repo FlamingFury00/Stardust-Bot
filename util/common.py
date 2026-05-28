@@ -480,7 +480,9 @@ def shot_valid(agent, shot, threshold=30):
     # Returns True if the ball is still where the shot anticipates it to be
     # First finds the two closest slices in the ball prediction to shot's intercept_time
     # threshold controls the tolerance we allow the ball to be off by
-    slices = agent.get_ball_prediction_struct().slices
+    slices = agent.ball_prediction.slices
+    if len(slices) == 0:
+        return False
     soonest = 0
     latest = len(slices) - 1
     while len(slices[soonest : latest + 1]) > 2:

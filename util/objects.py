@@ -2,6 +2,8 @@ import math
 
 from rlbot import flat
 from rlbot.managers import Bot
+from rlbot import flat
+from rlbot.managers import Bot
 
 # This file holds all of the objects used in gosling utils
 # Includes custom vector and matrix objects
@@ -24,6 +26,7 @@ class GoslingAgent(Bot):
     # This is the main object of Gosling Utils. It holds/updates information about the game and runs routines
     # All utils rely on information being structured and accessed the same way as configured in this class
     def initialize(self):
+    def initialize(self):
         # A list of cars for both teammates and opponents
         self.friends = []
         self.foes = []
@@ -38,7 +41,7 @@ class GoslingAgent(Bot):
         self.boosts = []
         # goals
         self.friend_goal = goal_object(self.team)
-        self.foe_goal = goal_object(not self.team)
+        self.foe_goal = goal_object(1 - self.team)
         # A list that acts as the routines stack
         self.intent = None
         # Game time
@@ -51,6 +54,7 @@ class GoslingAgent(Bot):
         self.kickoff_flag = False
         # text printed at the top left of the screen
         self.debug_text = ""
+        self.debug_lines = []
         self.first_pos = Vector3(0, 0, 0)
         self.last_time = 0
         self.my_score = 0
@@ -123,9 +127,11 @@ class GoslingAgent(Bot):
     def debug_intent(self):
         # Draws the stack on the screen
         white = self.renderer.white
+        white = self.renderer.white
 
         if self.intent is not None:
             text = self.intent.__class__.__name__
+            self.renderer.draw_string_2d(text, 10, 100, 3, white)
             self.renderer.draw_string_2d(text, 10, 100, 3, white)
 
     def clear(self):
@@ -137,6 +143,7 @@ class GoslingAgent(Bot):
 
     def preprocess(self, packet):
         # Calling the update functions for all of the objects
+        if len(packet.players) != len(self.friends) + len(self.foes) + 1:
         if len(packet.players) != len(self.friends) + len(self.foes) + 1:
             self.refresh_player_lists(packet)
         for car in self.friends:
@@ -218,14 +225,17 @@ class GoslingAgent(Bot):
         self.renderer.begin_rendering()
         # Run our strategy code
         self.run_strategy()
+        self.run_strategy()
         # run the routine on the end of the stack
         if self.intent is not None:
             self.intent.run(self)
         self.renderer.end_rendering()
         # send our updated controller back to rlbot
-        return self.controller
+        return self.controller.to_flat()
 
     def print_debug(self):
+        white = self.renderer.white
+        self.renderer.draw_string_2d(self.debug_text, 10, 150, 3, white)
         white = self.renderer.white
         self.renderer.draw_string_2d(self.debug_text, 10, 150, 3, white)
 
@@ -234,6 +244,12 @@ class GoslingAgent(Bot):
         if len(dupes) > 0:
             return
         self.debug_lines.append(
+            DebugLine(
+                name,
+                vec1,
+                vec2,
+                self.renderer.create_color(color[0], color[1], color[2], 255),
+            )
             DebugLine(
                 name,
                 vec1,
@@ -374,6 +390,7 @@ class GoslingAgent(Bot):
         return False
 
     def run_strategy(self):
+    def run_strategy(self):
         # override this with your strategy code
         pass
 
@@ -511,6 +528,7 @@ class boost_object:
 
     def update(self, packet):
         self.active = packet.boost_pads[self.index].is_active
+        self.active = packet.boost_pads[self.index].is_active
 
 
 class goal_object:
@@ -596,7 +614,10 @@ class Vector3:
         elif isinstance(args[0], flat.Vector3):
             self.data = [args[0].x, args[0].y, args[0].z]
         elif isinstance(args[0], flat.Rotator):
+        elif isinstance(args[0], flat.Rotator):
             self.data = [args[0].pitch, args[0].yaw, args[0].roll]
+        elif hasattr(args[0], "__getitem__"):
+            self.data = list(args[0])
         elif len(args) == 3:
             self.data = list(args)
         else:
